@@ -15,6 +15,7 @@ const NAV: NavEntry[] = [
   { to: '/chat', label: 'Chats', icon: 'chat' },
   { to: '/crear', label: 'Crear', icon: 'plus' },
   { to: '/test', label: 'Curso', icon: 'layers' },
+  { to: '/novedades', label: 'Novedades', icon: 'bell' },
   { to: '/perfil', label: 'Perfil', icon: 'user', profile: true },
 ]
 

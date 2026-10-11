@@ -8,6 +8,7 @@ import { CharacterPage } from './pages/CharacterPage'
 import { ChatPage } from './pages/ChatPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { NovedadesPage } from './pages/NovedadesPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { WelcomePage } from './pages/WelcomePage'
 
@@ -37,6 +38,7 @@ export function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/personaje/:characterId" element={<CharacterPage />} />
           <Route path="/test" element={<AssessmentPage />} />
+          <Route path="/novedades" element={<NovedadesPage />} />
           {/* El chat va por personaje: /chat solo redirige al último que usaste. */}
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:characterId" element={<ChatPage />} />

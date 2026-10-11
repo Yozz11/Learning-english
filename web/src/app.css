@@ -977,6 +977,46 @@ svg.i {
   font-size: 26px;
 }
 
+/* ---------------------------------------------------------------- novedades */
+
+.novedades .chips {
+  justify-content: flex-end;
+}
+
+.news-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-box);
+  background: var(--surface-2);
+}
+
+.news-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.news-summary {
+  font-size: 0.92rem;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.news-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.news-source {
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
 /* ---------------------------------------------------------------- comunes */
 /* Primitivas compartidas (tarjetas, botones, avisos, campos...). Ya usan los
    tokens del diseño nuevo; las pantallas migradas las comparten entre sí. */
