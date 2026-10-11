@@ -33,7 +33,19 @@ export const listConversationsRoute: RouteHandler = async ({ env, userId }) => {
 
 export const createConversationRoute: RouteHandler = async ({ env, userId }) => {
   const config = await getTeacherConfig(env.DB, userId)
-  return json(await createConversation(env.DB, userId, `Charla con ${config.name}`))
+  const conversation = await createConversation(env.DB, userId, `Charla con ${config.name}`)
+
+  // El saludo del personaje abre la charla, así la pantalla no arranca vacía.
+  if (config.greeting) {
+    const greeting = await insertMessage(env.DB, {
+      conversationId: conversation.id,
+      role: 'assistant',
+      content: config.greeting,
+    })
+    conversation.lastMessageAt = greeting.createdAt
+  }
+
+  return json(conversation)
 }
 
 export const listMessagesRoute: RouteHandler = async ({ env, userId, params }) => {

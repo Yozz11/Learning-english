@@ -110,6 +110,20 @@ export type TeacherConfig = {
   debateEnabled: boolean | null
   /** El personaje del profe: null = sin definir. */
   character: string | null
+  /** La frase que lo resume, la que se ve en la tarjeta. */
+  tagline: string | null
+  /** Cuántos errores corrige por mensaje: 1, 2 o null (automático). */
+  maxCorrections: number | null
+  /** Cómo habla: ritmo, muletillas, jergas, exclamaciones. */
+  speechStyle: string | null
+  /** Cómo saluda al abrir una charla nueva. */
+  greeting: string | null
+  /** 3 o 4 intercambios de ejemplo que muestran su voz y cómo corrige. */
+  examples: string | null
+  /** Lo que nunca hace (no se burla, no traduce todo, no sale del personaje). */
+  neverDoes: string | null
+  /** Situaciones donde brilla: entrevista, pedir comida, una escena de su mundo. */
+  scenarios: string | null
   /** Id de la galería, una imagen "data:image/…" subida por el usuario, o null. */
   avatar: string | null
   /** Nombre de la voz del sistema (speechSynthesis). null = la voz por defecto del dispositivo. */
@@ -131,6 +145,13 @@ export const DEFAULT_TEACHER_CONFIG: TeacherConfig = {
   spanishUsage: 'when_needed',
   debateEnabled: null,
   character: null,
+  tagline: null,
+  maxCorrections: null,
+  speechStyle: null,
+  greeting: null,
+  examples: null,
+  neverDoes: null,
+  scenarios: null,
   avatar: null,
   voice: null,
   autoSpeak: false,
@@ -154,6 +175,10 @@ export type TeacherPersona = {
   personality: string
   /** El personaje en inglés: es el rol que el modelo interpreta. */
   character: string
+  /** Cómo habla ese personaje, para rellenar la ficha de una vez. */
+  speechStyle: string
+  /** Cómo saluda al abrir una charla nueva. */
+  greeting: string
   humor: number
   formality: number
   severity: number
@@ -173,6 +198,9 @@ export const TEACHER_PERSONAS: readonly TeacherPersona[] = [
       'Entrenador enérgico y motivador. Celebra cada avance, te empuja a dar un poco más y usa metáforas de entrenamiento.',
     character:
       'a high-energy personal trainer who treats English like a workout: short drills, small challenges and loud encouragement. He uses sports metaphors and never lets you skip practice.',
+    speechStyle:
+      'Frases cortas y energía alta. Usa «Let\'s go!» y «One more time!», y compara el inglés con entrenar.',
+    greeting: 'Hey! Warm-up time. Tell me one thing you did today.',
     humor: 6,
     formality: 2,
     severity: 5,
@@ -190,6 +218,9 @@ export const TEACHER_PERSONAS: readonly TeacherPersona[] = [
       'Profesora formal y precisa. Le importa la cortesía, la palabra exacta y la pronunciación, con un humor seco y sutil.',
     character:
       'a formal British teacher with precise pronunciation and dry, subtle wit. She cares about politeness, exact word choice and getting the sounds right.',
+    speechStyle:
+      'Pausada y precisa. Evita las contracciones cuando corrige y usa un humor seco: un «quite» dice más que un discurso.',
+    greeting: 'Good evening. Shall we begin with something you did today?',
     humor: 4,
     formality: 9,
     severity: 7,
@@ -207,6 +238,8 @@ export const TEACHER_PERSONAS: readonly TeacherPersona[] = [
       'Amistad relajada y cercana. Habla de la vida diaria, series, música y planes, sin solemnidad.',
     character:
       'a relaxed friend your age who chats about daily life, music, series and weekend plans. Casual, warm and informal, with everyday vocabulary.',
+    speechStyle: 'Coloquial y rápido: «Hey», «yeah», «no way». Habla de planes y series como en un chat de amigos.',
+    greeting: 'Hey! How was your day? Tell me the small stuff.',
     humor: 7,
     formality: 1,
     severity: 3,
@@ -224,6 +257,8 @@ export const TEACHER_PERSONAS: readonly TeacherPersona[] = [
       'Mentor tranquilo y paciente. Prefiere hacerte razonar con preguntas antes que darte la respuesta.',
     character:
       'a calm, patient mentor who asks questions to make you think before giving the answer, and explains the why behind every rule.',
+    speechStyle: 'Tono tranquilo y ritmo lento. Pregunta más de lo que afirma y deja silencios para que pienses.',
+    greeting: 'Let us take it easy today. What would you like to understand better?',
     humor: 3,
     formality: 6,
     severity: 4,
@@ -241,6 +276,8 @@ export const TEACHER_PERSONAS: readonly TeacherPersona[] = [
       'Rival competitiva y juguetona. Convierte la práctica en un reto con puntos, y se burla un poco cuando fallas.',
     character:
       'a competitive, playful rival who turns every lesson into a game with points, streaks and rematches. She teases you a little when you slip, then pushes you to beat your score.',
+    speechStyle: 'Rápida y pícara, con vocabulario de juego: puntos, rachas y revancha. Te reta en cada respuesta.',
+    greeting: 'Rematch time. Warm up: tell me one thing you did today.',
     humor: 7,
     formality: 1,
     severity: 6,
@@ -258,6 +295,8 @@ export const TEACHER_PERSONAS: readonly TeacherPersona[] = [
       'Detective meticuloso. Te interroga con calma y quiere detalles concretos de todo lo que cuentas.',
     character:
       'a sharp, methodical detective who investigates every story you tell: she asks for details, evidence and exact descriptions, and treats English as the tool for saying precisely what happened.',
+    speechStyle: 'Tono de informe: frases ordenadas, repite lo que dijiste y pide el detalle que faltó.',
+    greeting: 'Let me take your statement. What did you do today?',
     humor: 4,
     formality: 6,
     severity: 4,

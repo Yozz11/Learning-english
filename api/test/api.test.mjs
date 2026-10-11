@@ -202,6 +202,47 @@ describe('API de english-coach', () => {
     assert.equal(saved.data.personaId, null)
   })
 
+  it('guarda la ficha del personaje y con ella abre la charla nueva', async () => {
+    const current = await api('/api/teacher')
+    const saved = await api('/api/teacher', {
+      method: 'PUT',
+      body: {
+        ...current.data,
+        tagline: 'Entrenador que te exige, pero siempre está de tu lado.',
+        speechStyle: 'Frases cortas, energía alta, compara el inglés con entrenar.',
+        greeting: 'Hey! Warm-up time. Tell me one thing you did today.',
+        examples: 'Yo: Yesterday I go to the gym.\nÉl: Almost! Yesterday I went to the gym.',
+        neverDoes: 'No se burla de mis errores y no traduce todo.',
+        scenarios: 'Entrevista de trabajo, hablar de deportes.',
+        maxCorrections: 1,
+      },
+    })
+    assert.equal(saved.status, 200)
+    assert.equal(saved.data.maxCorrections, 1)
+    assert.equal(saved.data.tagline, 'Entrenador que te exige, pero siempre está de tu lado.')
+    assert.equal(saved.data.neverDoes, 'No se burla de mis errores y no traduce todo.')
+
+    const created = await api('/api/conversations', { method: 'POST' })
+    assert.equal(created.status, 200)
+    assert.ok(created.data.lastMessageAt, 'la charla nueva debería quedar con el saludo dentro')
+
+    const messages = await api(`/api/conversations/${created.data.id}/messages`)
+    assert.equal(messages.status, 200)
+    assert.equal(messages.data.length, 1)
+    assert.equal(messages.data[0].role, 'assistant')
+    assert.match(messages.data[0].content, /Warm-up time/)
+  })
+
+  it('rechaza un campo de la ficha demasiado largo', async () => {
+    const current = await api('/api/teacher')
+    const saved = await api('/api/teacher', {
+      method: 'PUT',
+      body: { ...current.data, tagline: 'x'.repeat(200) },
+    })
+    assert.equal(saved.status, 400)
+    assert.equal(saved.data.error, 'invalid_field')
+  })
+
   it('frena las llamadas de IA al llegar al tope del día', async () => {
     const created = await api('/api/conversations', { method: 'POST' })
     assert.equal(created.status, 200)

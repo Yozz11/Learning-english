@@ -59,6 +59,24 @@ export function boundedInt(
   return rounded
 }
 
+/** Como boundedInt, pero acepta que el campo no venga: null = sin definir. */
+export function optionalInt(
+  body: Record<string, unknown>,
+  name: string,
+  opts: { min: number; max: number },
+): number | null {
+  const value = field(body, name)
+  if (value === undefined || value === null || value === '') return null
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new ApiError(400, 'invalid_field', `El campo "${name}" debe ser un número.`)
+  }
+  const rounded = Math.round(value)
+  if (rounded < opts.min || rounded > opts.max) {
+    throw new ApiError(400, 'invalid_field', `El campo "${name}" está fuera de rango.`)
+  }
+  return rounded
+}
+
 export function booleanOrNull(body: Record<string, unknown>, name: string): boolean | null {
   const value = field(body, name)
   if (value === undefined || value === null) return null

@@ -32,6 +32,17 @@ function levelSummary(skills: SkillProgress[]): string {
   return measured.map((skill) => `${SKILL_NAMES[skill.code]}: ${skill.label}`).join(', ')
 }
 
+/** Cuántos errores corrige por respuesta. Automático = 1 o 2, como antes. */
+function correctionLimit(config: TeacherConfig): string {
+  if (config.maxCorrections === 1) {
+    return 'Correct at most 1 mistake per reply: the most important one. Skip small slips.'
+  }
+  if (config.maxCorrections === 2) {
+    return 'Correct up to 2 mistakes per reply, never more. Skip small slips.'
+  }
+  return 'Correct at most 1 or 2 mistakes per reply. Skip small slips.'
+}
+
 function overallLevel(skills: SkillProgress[]): string {
   const measured = skills.filter((skill): skill is SkillProgress & { score: number } => skill.score !== null)
   if (measured.length === 0) return 'A2'
@@ -54,12 +65,25 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
     `Language: ${spanishRule(config.spanishUsage)}`,
   ]
 
+  // Ficha del personaje: lo que el usuario escribe sobre cómo es y cómo habla.
+  if (config.tagline) lines.push(`In one line, you are: ${config.tagline}`)
+  if (config.speechStyle) lines.push(`How you talk: ${config.speechStyle}`)
+  if (config.neverDoes) lines.push(`Things you never do: ${config.neverDoes}`)
+  if (config.scenarios) lines.push(`Situations you like to bring up: ${config.scenarios}`)
+
   if (config.character) {
     lines.push(
       `You are in character: ${config.character}`,
       'Play that persona the whole time: its energy, its way of speaking, its examples and its interests.',
       'Never mention that you are an AI, that you are playing a role, or that this app exists.',
       'The teaching rules below always win: stay in character, but never break a rule to do it.',
+    )
+  }
+
+  if (config.examples) {
+    lines.push(
+      'Examples of how you talk and how you correct (copy the voice, not the exact words):',
+      config.examples,
     )
   }
 
@@ -71,7 +95,7 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
     '',
     'Rules you always follow:',
     '- Reply in 2 to 5 short sentences unless I ask for something longer.',
-    '- Correct at most 1 or 2 mistakes per reply. Skip small slips.',
+    `- ${correctionLimit(config)}`,
     '- Prioritise mistakes listed below as "recurring" and mistakes above my level.',
     '- When you correct: show the natural version, explain why in ONE short line, then ask me to try again.',
     '- Never rewrite my whole message. Never list every error.',
