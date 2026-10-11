@@ -84,6 +84,35 @@ async function login(passphrase) {
   return response
 }
 
+/** Sube un archivo de verdad: FormData con el archivo y el modo. */
+async function upload(formData) {
+  const response = await fetch(`${BASE}/api/uploads`, {
+    method: 'POST',
+    headers: cookie ? { cookie } : {},
+    body: formData,
+  })
+
+  const raw = await response.text()
+  let data = null
+  try {
+    data = raw ? JSON.parse(raw) : null
+  } catch {
+    data = raw
+  }
+
+  return { status: response.status, data }
+}
+
+function fileForm(
+  content = 'Hi, this is a file for the test.',
+  { type = 'text/plain', name = 'nota.txt', mode } = {},
+) {
+  const form = new FormData()
+  form.set('file', new Blob([content], { type }), name)
+  if (mode) form.set('mode', mode)
+  return form
+}
+
 before(async () => {
   // Estado limpio: solo se borra la carpeta de pruebas.
   rmSync(stateDir, { recursive: true, force: true })
@@ -392,26 +421,88 @@ describe('API de english-coach', () => {
     })
   })
 
+  describe('archivos para transcribir o traducir', () => {
+    let saved = null
+
+    it('sube un archivo y guarda la transcripción con su traducción', async () => {
+      const response = await upload(fileForm('Hello, this is my recording.'))
+      assert.equal(response.status, 201)
+      assert.equal(response.data.data.fileName, 'nota.txt')
+      assert.equal(response.data.data.mimeType, 'text/plain')
+      assert.equal(response.data.data.mode, 'translate')
+      assert.ok(response.data.data.result.transcript.length > 0)
+      assert.ok(response.data.data.result.translation, 'el modo traducir debería traer traducción')
+      saved = response.data.data
+    })
+
+    it('solo transcribe cuando se pide así', async () => {
+      const response = await upload(fileForm('Hello again.', { mode: 'transcribe' }))
+      assert.equal(response.status, 201)
+      assert.equal(response.data.data.mode, 'transcribe')
+      assert.equal(response.data.data.result.translation, null)
+    })
+
+    it('rechaza un tipo de archivo que no puede leer', async () => {
+      const response = await upload(fileForm('PK', { type: 'application/zip', name: 'cosas.zip' }))
+      assert.equal(response.status, 415)
+      assert.equal(response.data.error, 'unsupported_type')
+    })
+
+    it('rechaza una subida sin archivo', async () => {
+      const form = new FormData()
+      form.set('mode', 'translate')
+      const response = await upload(form)
+      assert.equal(response.status, 400)
+      assert.equal(response.data.error, 'missing_file')
+    })
+
+    it('rechaza un archivo más pesado de lo que acepta el plan gratis', async () => {
+      const big = new Blob([new Uint8Array(12 * 1024 * 1024 + 1)], { type: 'audio/mpeg' })
+      const form = new FormData()
+      form.set('file', big, 'largo.mp3')
+      const response = await upload(form)
+      assert.equal(response.status, 413)
+      assert.equal(response.data.error, 'file_too_big')
+    })
+
+    it('lista el historial, lo lee y lo borra', async () => {
+      const list = await api('/api/uploads')
+      assert.equal(list.status, 200)
+      assert.ok(list.data.data.some((item) => item.id === saved.id))
+
+      const one = await api(`/api/uploads/${saved.id}`)
+      assert.equal(one.status, 200)
+      assert.equal(one.data.data.id, saved.id)
+
+      const removed = await api(`/api/uploads/${saved.id}`, { method: 'DELETE' })
+      assert.equal(removed.status, 200)
+
+      const gone = await api(`/api/uploads/${saved.id}`)
+      assert.equal(gone.status, 404)
+      assert.equal(gone.data.error, 'not_found')
+    })
+  })
+
   it('frena las llamadas de IA al llegar al tope del día', async () => {
     const created = await api('/api/conversations', { method: 'POST' })
     assert.equal(created.status, 200)
     const conversationId = created.data.id
 
-    const statuses = []
-    for (let i = 0; i < AI_DAILY_LIMIT + 1; i += 1) {
+    // Las pruebas de arriba ya gastaron parte del tope: se empuja hasta que la
+    // API diga basta, y se comprueba que el freno es firme.
+    let blocked = null
+    for (let i = 0; i <= AI_DAILY_LIMIT + 1 && blocked === null; i += 1) {
       const sent = await api(`/api/conversations/${conversationId}/messages`, {
         method: 'POST',
         body: { content: 'Hello teacher, this is a test message.' },
       })
-      statuses.push(sent.status)
-      if (sent.status === 429) {
-        assert.equal(sent.data.error, 'ai_daily_limit')
-        assert.match(sent.data.message, /llamadas de IA/)
-      }
+      if (sent.status === 429) blocked = sent
+      else assert.equal(sent.status, 200)
     }
 
-    assert.deepEqual(statuses.slice(0, AI_DAILY_LIMIT), Array(AI_DAILY_LIMIT).fill(200))
-    assert.equal(statuses.at(-1), 429)
+    assert.ok(blocked, 'la IA nunca frenó al llegar al tope del día')
+    assert.equal(blocked.data.error, 'ai_daily_limit')
+    assert.match(blocked.data.message, /llamadas de IA/)
   })
 
   it('bloquea la IP tras varios intentos fallidos', async () => {

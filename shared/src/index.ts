@@ -466,6 +466,36 @@ export type HomeData = {
   topErrors: LearnerError[]
 }
 
+// ---------------------------------------------------------------- archivos
+
+/** Qué le pedimos al modelo con el archivo que subes. */
+export type UploadMode = 'transcribe' | 'translate'
+
+export const UPLOAD_MODE_LABELS: Record<UploadMode, string> = {
+  transcribe: 'Transcribir',
+  translate: 'Transcribir y traducir',
+}
+
+/** Lo que el modelo saca del archivo. */
+export type UploadResult = {
+  title: string
+  transcript: string
+  /** `null` cuando solo pediste transcribir o cuando ya estaba en español. */
+  translation: string | null
+  /** Frases o detalles del archivo que vale la pena mirar con calma. */
+  notes: string[]
+}
+
+export type UploadRecord = {
+  id: string
+  fileName: string
+  mimeType: string
+  size: number
+  mode: UploadMode
+  result: UploadResult
+  createdAt: number
+}
+
 // ---------------------------------------------------------------- API
 
 export type ApiErrorBody = { error: string; message: string }

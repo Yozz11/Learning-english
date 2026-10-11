@@ -24,6 +24,19 @@ function replyFor(input: ChatInput): string {
 
   if (input.tag === 'writing') return WRITING_JSON
 
+  if (input.tag === 'upload') {
+    // Respuesta fija, pero con el archivo que llegó, para poder ver en la app
+    // que el texto y el modo viajaron de verdad.
+    const fileName = lastUserMessage.match(/^File name: (.+)$/m)?.[1] ?? 'Archivo'
+    const translates = lastUserMessage.includes('Task: transcribe the file and translate')
+    return JSON.stringify({
+      title: `Prueba: ${fileName}`,
+      transcript: 'This is the fixed transcript of the mock provider. It never reads the file.',
+      translation: translates ? 'Esta es la transcripción fija del proveedor de prueba.' : null,
+      notes: ['El proveedor de prueba no lee el archivo: devuelve siempre este texto.'],
+    })
+  }
+
   if (input.tag === 'summary') {
     return 'Hablamos de rutinas diarias. Te costó el presente simple en tercera persona y confundiste "have" con "be" para la edad. Repasemos eso.'
   }

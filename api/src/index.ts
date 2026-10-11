@@ -28,6 +28,12 @@ import {
 } from './routes/characters'
 import { readProfile, saveProfile } from './routes/profile'
 import { readTeacher, saveTeacher } from './routes/teacher'
+import {
+  createUploadRoute,
+  deleteUploadRoute,
+  listUploadsRoute,
+  readUploadRoute,
+} from './routes/uploads'
 
 const router = createRouter({ authenticate: requireUserId })
 
@@ -60,6 +66,12 @@ router.post('/api/characters/:id/chat', newCharacterChatRoute)
 router.post('/api/assessment/start', startAssessment)
 router.post('/api/assessment/answer', answerAssessment)
 router.get('/api/assessment/latest', latestAssessment)
+
+// Archivos para transcribir o traducir. El archivo no se guarda: solo el texto.
+router.post('/api/uploads', createUploadRoute)
+router.get('/api/uploads', listUploadsRoute)
+router.get('/api/uploads/:id', readUploadRoute)
+router.delete('/api/uploads/:id', deleteUploadRoute)
 
 router.get('/api/conversations', listConversationsRoute)
 router.post('/api/conversations', createConversationRoute)

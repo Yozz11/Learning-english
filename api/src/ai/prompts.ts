@@ -5,6 +5,7 @@ import type {
   SkillCode,
   SkillProgress,
   TeacherConfig,
+  UploadMode,
 } from '@english-coach/shared'
 import { CEFR_LEVELS, SKILL_CODES, SKILL_NAMES, scoreLabel } from '@english-coach/shared'
 import type { AIMessage } from './types'
@@ -275,6 +276,61 @@ export function buildSummarySystem(): string {
     'Reply with at most 3 short bullet points, in Spanish, plain text, no markdown headers.',
     'Cover: what we talked about, what the student struggled with, and what to review next.',
   ].join('\n')
+}
+
+// ------------------------------------------------------- archivos subidos
+
+/**
+ * Lo que le pedimos al modelo con un archivo: transcribirlo y, si el modo lo
+ * pide, traducirlo al español. Devuelve JSON para no depender de cómo maqueta.
+ */
+export function buildUploadSystem(mode: UploadMode): string {
+  const lines = [
+    'You help a Spanish-speaking student who is learning English with files they upload.',
+    'The file may be an audio recording, a PDF or an image. Read it and work only with what is really there.',
+    'Answer with JSON only, using exactly these keys:',
+    '{"title": string, "transcript": string, "translation": string|null, "notes": string[]}',
+    '- "title": a short title in Spanish for the file (max 70 characters).',
+    '- "transcript": the full text of what is said or written, in its original language, without translating it.',
+    '  Keep the original line breaks and paragraphs. Do not add commentary.',
+  ]
+
+  if (mode === 'translate') {
+    lines.push(
+      '- "translation": the whole transcript translated into natural Spanish. Same paragraphs as the transcript.',
+    )
+  } else {
+    lines.push('- "translation": null, always.')
+  }
+
+  lines.push(
+    '- "notes": up to 5 short items in Spanish with what is worth studying: tricky words, idioms or ' +
+      'pronunciation details that appear in the file. Empty list if there is nothing to point out.',
+    'If the file cannot be read or has no understandable audio or text, say so in "transcript" and leave the rest empty.',
+  )
+
+  return lines.join('\n')
+}
+
+export function buildUploadUser(input: {
+  fileName: string
+  mimeType: string
+  mode: UploadMode
+  text: string | null
+}): AIMessage[] {
+  const task =
+    input.mode === 'translate'
+      ? 'Task: transcribe the file and translate it into Spanish.'
+      : 'Task: transcribe the file only, no translation.'
+
+  const header = `File name: ${input.fileName}\nMime type: ${input.mimeType}\n${task}`
+
+  // El texto plano no se manda como archivo: va dentro del propio mensaje.
+  if (input.text !== null) {
+    return [{ role: 'user', content: `${header}\n\nFile content:\n${input.text}` }]
+  }
+
+  return [{ role: 'user', content: `${header}\n\nThe file goes attached.` }]
 }
 
 export function buildSummaryUser(transcript: string): AIMessage[] {

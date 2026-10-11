@@ -32,7 +32,14 @@ export function geminiProvider(apiKey: string, model: string): AIProvider {
         systemInstruction: { parts: [{ text: input.system }] },
         contents: input.messages.map((message) => ({
           role: message.role === 'user' ? 'user' : 'model',
-          parts: [{ text: message.content }],
+          parts: [
+            { text: message.content },
+            // Los archivos van como datos pegados al mensaje. Gemini acepta
+            // audio, PDF e imágenes así, sin subirlos antes a ningún sitio.
+            ...(message.files ?? []).map((file) => ({
+              inlineData: { mimeType: file.mimeType, data: file.base64 },
+            })),
+          ],
         })),
         generationConfig: {
           temperature: input.temperature ?? 0.6,

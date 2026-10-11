@@ -35,6 +35,7 @@ export function createRouter(options: RouterOptions) {
     get: (path: string, handler: RouteHandler) => route('GET', path, false, handler),
     post: (path: string, handler: RouteHandler) => route('POST', path, false, handler),
     put: (path: string, handler: RouteHandler) => route('PUT', path, false, handler),
+    delete: (path: string, handler: RouteHandler) => route('DELETE', path, false, handler),
     publicGet: (path: string, handler: RouteHandler) => route('GET', path, true, handler),
     publicPost: (path: string, handler: RouteHandler) => route('POST', path, true, handler),
 

@@ -9,6 +9,8 @@ import type {
   SkillCode,
   SkillProgress,
   TeacherConfig,
+  UploadRecord,
+  UploadResult,
 } from '@english-coach/shared'
 import {
   CHARACTER_NEW_DAYS,
@@ -970,4 +972,125 @@ export async function registerAiCall(db: D1Database, day: string): Promise<numbe
 
   const row = await db.prepare('SELECT calls FROM ai_usage WHERE day = ?').bind(day).first<{ calls: number }>()
   return row?.calls ?? 0
+}
+
+// ---------------------------------------------------------------- archivos subidos
+
+export interface UploadRow {
+  id: string
+  user_id: string
+  file_name: string
+  mime_type: string
+  size: number
+  mode: string
+  result: string
+  created_at: number
+}
+
+/** El archivo no se guarda: solo su nombre, su peso y el resultado en texto. */
+export async function insertUpload(
+  db: D1Database,
+  userId: string,
+  input: { fileName: string; mimeType: string; size: number; mode: string; result: string },
+): Promise<UploadRow> {
+  const row: UploadRow = {
+    id: crypto.randomUUID(),
+    user_id: userId,
+    file_name: input.fileName,
+    mime_type: input.mimeType,
+    size: input.size,
+    mode: input.mode,
+    result: input.result,
+    created_at: Date.now(),
+  }
+
+  await db
+    .prepare(
+      `INSERT INTO uploads (id, user_id, file_name, mime_type, size, mode, result, created_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
+    )
+    .bind(
+      row.id,
+      row.user_id,
+      row.file_name,
+      row.mime_type,
+      row.size,
+      row.mode,
+      row.result,
+      row.created_at,
+    )
+    .run()
+
+  return row
+}
+
+export async function listUploads(db: D1Database, userId: string): Promise<UploadRow[]> {
+  const { results } = await db
+    .prepare('SELECT * FROM uploads WHERE user_id = ? ORDER BY created_at DESC LIMIT 50')
+    .bind(userId)
+    .all<UploadRow>()
+  return results ?? []
+}
+
+export async function getUpload(db: D1Database, userId: string, id: string): Promise<UploadRow | null> {
+  return db
+    .prepare('SELECT * FROM uploads WHERE id = ? AND user_id = ?')
+    .bind(id, userId)
+    .first<UploadRow>()
+}
+
+export async function deleteUpload(db: D1Database, userId: string, id: string): Promise<boolean> {
+  const result = await db.prepare('DELETE FROM uploads WHERE id = ? AND user_id = ?').bind(id, userId).run()
+  return (result.meta.changes ?? 0) > 0
+}
+
+/** Pasa la fila de la base al formato que ve la app. */
+export function toUploadRecord(row: UploadRow): UploadRecord {
+  const result = parseUploadResult(row.result)
+
+  return {
+    id: row.id,
+    fileName: row.file_name,
+    mimeType: row.mime_type,
+    size: row.size,
+    mode: row.mode === 'translate' ? 'translate' : 'transcribe',
+    result,
+    createdAt: row.created_at,
+  }
+}
+
+/**
+ * El modelo debería devolver el JSON pedido, pero puede venir con texto suelto
+ * alrededor o con un campo de menos. Aquí se recorta a lo esperado.
+ */
+export function parseUploadResult(raw: string): UploadResult {
+  let data: unknown
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
+    data = start >= 0 && end > start ? safeJson(raw.slice(start, end + 1)) : null
+  }
+
+  const source = (data ?? {}) as Record<string, unknown>
+  const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+  const translation = text(source.translation)
+
+  return {
+    title: text(source.title) || 'Archivo',
+    transcript: text(source.transcript) || raw.trim(),
+    translation: translation || null,
+    notes: Array.isArray(source.notes)
+      ? source.notes.filter((note): note is string => typeof note === 'string' && note.trim() !== '').slice(0, 8)
+      : [],
+  }
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
 }
