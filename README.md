@@ -84,7 +84,9 @@ fijos. Así se puede probar todo el flujo sin gastar cuota (la escritura siempre
 
 Otros comandos: `npm run typecheck`, `npm run build`, `npm run test:api` y `npm run test:ui` (las pruebas
 levantan su propio servidor y su propia base: no tocan la base local ni gastan cuota de IA). Las de
-interfaz comparan las medidas con el plano de `docs/referencia/` (que vive fuera de git).
+interfaz comparan las medidas con el plano de `docs/referencia/` (que vive fuera de git). Las de API
+prueban además el proveedor de Gemini contra un Gemini de mentira en local (`GEMINI_BASE_URL`), así que
+los reintentos y los archivos pegados al mensaje se prueban de verdad, sin salir a internet.
 
 ## Variables y secretos
 
@@ -98,6 +100,7 @@ Nunca se suben al repositorio.
 | `AI_PROVIDER` | `gemini` o `mock`. |
 | `GEMINI_API_KEY` | Solo si `AI_PROVIDER=gemini`. |
 | `GEMINI_MODEL` | Por defecto `gemini-3.6-flash`. |
+| `GEMINI_BASE_URL` | Solo para las pruebas: apunta a un Gemini de mentira en local. En producción no se pone. |
 | `AI_DAILY_LIMIT` | Tope de llamadas a la IA por día (por defecto 200). Al pasarlo, la app avisa en vez de gastar cuota. |
 
 Para generar un `SESSION_SECRET` nuevo: `openssl rand -base64 32`.
