@@ -628,3 +628,67 @@ export async function saveConversationSummary(
     .bind(summary, messageCount, Date.now(), conversationId)
     .run()
 }
+
+// ---------------------------------------------------------------- límites (intentos y cuota)
+
+export interface LoginAttemptRow {
+  failures: number
+  window_start: number
+  blocked_until: number
+}
+
+export async function getLoginAttempt(db: D1Database, ip: string): Promise<LoginAttemptRow | null> {
+  return db
+    .prepare('SELECT failures, window_start, blocked_until FROM login_attempts WHERE ip = ?')
+    .bind(ip)
+    .first<LoginAttemptRow>()
+}
+
+/** Suma un fallo. `windowStart` en 0 significa empezar una ventana nueva. */
+export async function saveLoginFailure(
+  db: D1Database,
+  input: { ip: string; failures: number; windowStart: number; blockedUntil: number },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO login_attempts (ip, failures, window_start, blocked_until)
+       VALUES (?1, ?2, ?3, ?4)
+       ON CONFLICT(ip) DO UPDATE SET
+         failures = excluded.failures,
+         window_start = excluded.window_start,
+         blocked_until = excluded.blocked_until`,
+    )
+    .bind(input.ip, input.failures, input.windowStart, input.blockedUntil)
+    .run()
+}
+
+export async function clearLoginAttempts(db: D1Database, ip: string): Promise<void> {
+  await db.prepare('DELETE FROM login_attempts WHERE ip = ?').bind(ip).run()
+}
+
+/** Día en UTC, que es como se reinician las cuotas gratis de los proveedores. */
+export function utcDay(at: number = Date.now()): string {
+  return new Date(at).toISOString().slice(0, 10)
+}
+
+export async function countAiCalls(db: D1Database, day: string): Promise<number> {
+  const row = await db
+    .prepare('SELECT calls FROM ai_usage WHERE day = ?')
+    .bind(day)
+    .first<{ calls: number }>()
+  return row?.calls ?? 0
+}
+
+/** Suma una llamada al contador del día y devuelve el total acumulado. */
+export async function registerAiCall(db: D1Database, day: string): Promise<number> {
+  await db
+    .prepare(
+      `INSERT INTO ai_usage (day, calls) VALUES (?1, 1)
+       ON CONFLICT(day) DO UPDATE SET calls = calls + 1`,
+    )
+    .bind(day)
+    .run()
+
+  const row = await db.prepare('SELECT calls FROM ai_usage WHERE day = ?').bind(day).first<{ calls: number }>()
+  return row?.calls ?? 0
+}

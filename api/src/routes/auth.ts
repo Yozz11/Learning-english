@@ -8,6 +8,7 @@ import {
   verifySessionToken,
 } from '../lib/auth'
 import { ApiError, json, readJsonBody } from '../lib/http'
+import { assertLoginAllowed, clientIp, forgetLoginFailures, registerLoginFailure } from '../lib/attempts'
 import type { RouteHandler } from '../lib/router'
 import { requiredString } from '../lib/validate'
 import { getOrCreateUserId, getProfile, touchUser } from '../db/queries'
@@ -15,10 +16,16 @@ import { getOrCreateUserId, getProfile, touchUser } from '../db/queries'
 export const login: RouteHandler = async ({ req, env }) => {
   const body = await readJsonBody(req)
   const passphrase = requiredString(body, 'passphrase', { min: 1, max: 200 })
+  const ip = clientIp(req)
+
+  await assertLoginAllowed(env, ip)
 
   if (!(await checkPassphrase(env, passphrase))) {
+    await registerLoginFailure(env, ip)
     throw new ApiError(401, 'bad_passphrase', 'Esa no es la contraseña.')
   }
+
+  await forgetLoginFailures(env, ip)
 
   const userId = await getOrCreateUserId(env.DB)
   await touchUser(env.DB, userId)
