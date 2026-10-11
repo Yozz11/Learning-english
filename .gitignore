@@ -9,3 +9,6 @@ dist/
 .DS_Store
 *.log
 docs/referencia/
+test-results/
+playwright-report/
+blob-report/
