@@ -32,7 +32,12 @@ export function LoadingBox() {
 }
 
 export function Alert({ children }: { children: ReactNode }) {
-  return <div className="alert">{children}</div>
+  // role="alert" para que el lector de pantalla lo anuncie apenas aparece.
+  return (
+    <div className="alert" role="alert">
+      {children}
+    </div>
+  )
 }
 
 export function Note({ children }: { children: ReactNode }) {

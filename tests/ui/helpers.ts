@@ -28,6 +28,11 @@ export type Box = {
   columns: number
   color: string
   background: string
+  fontSize: string
+  fontWeight: string
+  textAlign: string
+  animationDuration: string
+  cssTop: string
 }
 
 /** Medidas y estilos calculados del primer elemento que coincide. */
@@ -50,6 +55,11 @@ export async function box(page: Page, selector: string, index = 0): Promise<Box>
       columns: style.gridTemplateColumns.split(' ').filter(Boolean).length,
       color: style.color,
       background: style.backgroundColor,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight,
+      textAlign: style.textAlign,
+      animationDuration: style.animationDuration,
+      cssTop: style.top,
     }
   })
 }

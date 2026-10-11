@@ -77,6 +77,116 @@ svg.i {
   }
 }
 
+/* ---------------------------------------------------------------- bienvenida */
+
+.welcome {
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.orbits {
+  position: absolute;
+  inset: 0;
+}
+
+.orbits svg {
+  width: 100%;
+  height: 100%;
+}
+
+.orbits circle {
+  fill: none;
+  stroke: var(--orbit);
+  stroke-width: 1;
+}
+
+/* Las órbitas dan una vuelta lenta alrededor del centro de los círculos.
+   El origen va en porcentaje (centro del círculo / alto) para que siga
+   funcionando si la ventana no mide 390×844. */
+.orbit-spin {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 39.1%;
+  animation: orbit 90s linear infinite;
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.avatar-orb {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.avatar-orb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.welcome h1 {
+  position: absolute;
+  top: 300px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  max-width: 340px;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 28px 20px calc(40px + env(safe-area-inset-bottom, 0px));
+  background: var(--sheet);
+  border-radius: 36px 36px 0 0;
+  text-align: center;
+}
+
+.legal {
+  margin-top: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.btn-lg {
+  height: 56px;
+  font-size: 17px;
+}
+
+@media (min-width: 720px) {
+  /* En pantallas anchas la bienvenida se centra en una columna de móvil. */
+  .welcome {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 700;
+}
+
 /* ---------------------------------------------------------------- estructura */
 
 .shell {

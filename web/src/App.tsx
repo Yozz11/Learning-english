@@ -8,6 +8,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { TeacherPage } from './pages/TeacherPage'
+import { WelcomePage } from './pages/WelcomePage'
 
 /** Si no hay sesión, todo lleva al login. */
 function ProtectedLayout() {
@@ -20,7 +21,7 @@ function ProtectedLayout() {
       </div>
     )
   }
-  if (!session?.authenticated) return <Navigate to="/login" replace />
+  if (!session?.authenticated) return <Navigate to="/bienvenida" replace />
   return <AppShell />
 }
 
@@ -28,6 +29,8 @@ export function App() {
   return (
     <SessionProvider>
       <Routes>
+        {/* Las dos pantallas de entrada se ven a pantalla completa, sin barra. */}
+        <Route path="/bienvenida" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />

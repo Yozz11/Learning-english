@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Icon } from '../components/icons'
 import { Alert, Button } from '../components/ui'
 import { errorMessage } from '../lib/api'
 import { useSession } from '../lib/session'
@@ -32,12 +33,14 @@ export function LoginPage() {
 
   return (
     <div className="center">
-      <form className="login-card card" onSubmit={handleSubmit}>
-        <div className="brand">
-          <span className="brand-mark" aria-hidden />
-          English Coach
-        </div>
-        <p className="muted">Tu profesor de inglés. Pon la contraseña y entramos.</p>
+      <form className="login-card" onSubmit={handleSubmit}>
+        <Link className="link-btn" to="/bienvenida">
+          <Icon name="back" size={18} />
+          Volver
+        </Link>
+
+        <h1 className="login-title">Entrar</h1>
+        <p className="muted">Pon la contraseña de tu app y seguimos donde lo dejaste.</p>
 
         <label>
           Contraseña
@@ -53,7 +56,7 @@ export function LoginPage() {
 
         {error ? <Alert>{error}</Alert> : null}
 
-        <Button type="submit" variant="primary" className="btn-block" disabled={busy}>
+        <Button type="submit" variant="primary" className="btn-block btn-lg" disabled={busy}>
           {busy ? 'Entrando…' : 'Entrar'}
         </Button>
       </form>
