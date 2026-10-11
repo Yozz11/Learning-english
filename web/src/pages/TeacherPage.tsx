@@ -66,13 +66,18 @@ export function TeacherPage() {
     setSaved(false)
     setConfig((previous) => {
       if (!previous) return previous
-      if (!persona) return { ...previous, personaId: null, character: null }
+      if (!persona) {
+        return { ...previous, personaId: null, character: null, tagline: null, speechStyle: null, greeting: null }
+      }
       return {
         ...previous,
         personaId: persona.id,
         name: persona.teacherName,
         personality: persona.personality,
         character: persona.character,
+        tagline: persona.tagline,
+        speechStyle: persona.speechStyle,
+        greeting: persona.greeting,
         humor: persona.humor,
         formality: persona.formality,
         severity: persona.severity,
@@ -232,6 +237,17 @@ export function TeacherPage() {
           </label>
 
           <label>
+            Frase
+            <input
+              value={config.tagline ?? ''}
+              maxLength={120}
+              placeholder="Ej.: Entrenador que te exige, pero siempre está de tu lado."
+              onChange={(event) => update('tagline', event.target.value || null)}
+            />
+            <span className="field-hint">Una línea que lo resume, la que se ve en la tarjeta.</span>
+          </label>
+
+          <label>
             Personaje
             <textarea
               value={config.character ?? ''}
@@ -255,6 +271,18 @@ export function TeacherPage() {
               onChange={(event) => update('personality', event.target.value)}
             />
             <span className="field-hint">Cómo es, qué le interesa, cómo te habla.</span>
+          </label>
+
+          <label>
+            Cómo habla
+            <textarea
+              value={config.speechStyle ?? ''}
+              maxLength={400}
+              rows={3}
+              placeholder="Ej.: frases cortas, energía alta, usa «Let's go!» y compara el inglés con entrenar."
+              onChange={(event) => update('speechStyle', event.target.value || null)}
+            />
+            <span className="field-hint">Ritmo, muletillas, jergas o exclamaciones. Máximo tres líneas.</span>
           </label>
 
           <Slider
@@ -283,6 +311,70 @@ export function TeacherPage() {
               maxLength={400}
               rows={3}
               onChange={(event) => update('correctionStyle', event.target.value)}
+            />
+          </label>
+
+          <label>
+            Errores por mensaje
+            <select
+              value={config.maxCorrections === null ? 'auto' : String(config.maxCorrections)}
+              onChange={(event) =>
+                update('maxCorrections', event.target.value === 'auto' ? null : Number(event.target.value))
+              }
+            >
+              <option value="auto">Automático (1 o 2, lo que más importe)</option>
+              <option value="1">Solo 1, el más importante</option>
+              <option value="2">Hasta 2</option>
+            </select>
+          </label>
+
+          <label>
+            Mensaje inicial
+            <textarea
+              value={config.greeting ?? ''}
+              maxLength={300}
+              rows={2}
+              placeholder="Ej.: Hey! Warm-up time. Tell me one thing you did today."
+              onChange={(event) => update('greeting', event.target.value || null)}
+            />
+            <span className="field-hint">Con esto abre cada charla nueva.</span>
+          </label>
+
+          <label>
+            Diálogos de ejemplo
+            <textarea
+              value={config.examples ?? ''}
+              maxLength={1200}
+              rows={5}
+              placeholder={
+                'Yo: Yesterday I go to the gym.\nÉl: Almost! Yesterday I went to the gym. Say it again, champ.'
+              }
+              onChange={(event) => update('examples', event.target.value || null)}
+            />
+            <span className="field-hint">
+              Tres o cuatro intercambios cortos: es lo que más ayuda a que suene como él.
+            </span>
+          </label>
+
+          <label>
+            Cosas que nunca hace
+            <textarea
+              value={config.neverDoes ?? ''}
+              maxLength={400}
+              rows={2}
+              placeholder="Ej.: no se burla de mis errores, no traduce todo, no se sale del personaje."
+              onChange={(event) => update('neverDoes', event.target.value || null)}
+            />
+          </label>
+
+          <label>
+            Escenarios favoritos
+            <textarea
+              value={config.scenarios ?? ''}
+              maxLength={400}
+              rows={2}
+              placeholder="Ej.: entrevista de trabajo, hablar de deportes, retos de vocabulario."
+              onChange={(event) => update('scenarios', event.target.value || null)}
             />
           </label>
 
