@@ -180,7 +180,7 @@ export function ChatPage() {
 
       {error ? <Alert>{error}</Alert> : null}
 
-      <div className="composer">
+      <div className="composer-sticky">
         <textarea
           value={draft}
           maxLength={2000}

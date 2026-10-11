@@ -106,7 +106,7 @@ export function AssessmentPage() {
   return (
     <>
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>{SKILL_NAMES[question.skill]}</h2>
           <span className="tiny">
             {answered + 1} de {total} (máx.)
@@ -192,7 +192,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
       </Card>
 
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Por habilidad</h2>
         </div>
         <div className="stack" style={{ paddingTop: 0 }}>
@@ -204,7 +204,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
 
       {result.strengths.length > 0 ? (
         <Card>
-          <div className="card-head">
+          <div className="box-head">
             <h2>Lo que ya haces bien</h2>
           </div>
           <ul style={{ margin: 0, paddingLeft: 18 }}>
@@ -217,7 +217,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
 
       {result.weaknesses.length > 0 ? (
         <Card>
-          <div className="card-head">
+          <div className="box-head">
             <h2>Lo que hay que trabajar</h2>
           </div>
           <ul style={{ margin: 0, paddingLeft: 18 }}>
@@ -230,7 +230,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
 
       {result.errors.length > 0 ? (
         <Card>
-          <div className="card-head">
+          <div className="box-head">
             <h2>Errores detectados</h2>
           </div>
           <div className="stack" style={{ paddingTop: 0 }}>

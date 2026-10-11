@@ -146,7 +146,7 @@ export function TeacherPage() {
   return (
     <>
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Mi profesor</h2>
           {saved ? <span className="tiny">guardado</span> : null}
         </div>
@@ -164,7 +164,7 @@ export function TeacherPage() {
       </Card>
 
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Elige un personaje</h2>
         </div>
         <p className="muted">
@@ -425,7 +425,7 @@ export function TeacherPage() {
       </Card>
 
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Su voz</h2>
         </div>
         {isSpeechSupported() ? (

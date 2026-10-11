@@ -1,25 +1,15 @@
-:root {
-  --bg: #0b0f1a;
-  --bg-soft: #131a2b;
-  --surface: rgba(255, 255, 255, 0.04);
-  --surface-2: rgba(255, 255, 255, 0.07);
-  --border: rgba(255, 255, 255, 0.09);
-  --text: #e8ecf5;
-  --muted: #98a4bf;
-  --accent: #6ee7ff;
-  --accent-2: #a78bfa;
-  --good: #56d99a;
-  --warn: #ffcc66;
-  --bad: #ff7a90;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
-  color-scheme: dark;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-}
+/*
+ * Estilos de la app. Los colores y las medidas salen de los tokens de theme.css,
+ * que a su vez salen del plano (docs/referencia/referencia-ui.html).
+ *
+ * Orden: base, iconos, estructura (barra inferior y barra lateral), y al final lo
+ * heredado de la interfaz anterior mientras termino de migrar esas pantallas.
+ */
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html,
@@ -30,13 +20,12 @@ body,
 
 body {
   margin: 0;
+  background: var(--bg);
   color: var(--text);
-  background:
-    radial-gradient(1100px 620px at 12% -12%, rgba(110, 231, 255, 0.14), transparent 60%),
-    radial-gradient(900px 520px at 108% 4%, rgba(167, 139, 250, 0.16), transparent 55%),
-    var(--bg);
-  background-attachment: fixed;
+  font-family: var(--font);
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 a {
@@ -51,113 +40,233 @@ h3 {
   line-height: 1.2;
 }
 
-h1 {
-  font-size: 1.35rem;
-}
-
-h2 {
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 p {
   margin: 0;
   line-height: 1.5;
 }
 
-/* ---------------------------------------------------------------- estructura */
-
-.app {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  max-width: 720px;
-  margin: 0 auto;
-  /* Los insets respetan la muesca y la barra de gestos del iPhone. */
-  padding: env(safe-area-inset-top, 0px) 16px calc(96px + env(safe-area-inset-bottom, 0px));
+button {
+  font: inherit;
+  color: inherit;
 }
 
-.topbar {
+:focus-visible {
+  outline: 2px solid var(--dot-blue);
+  outline-offset: 2px;
+}
+
+/* Iconos: mismo trazo que el plano. */
+svg.i {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------- estructura */
+
+.shell {
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px 0 10px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page {
+  flex: 1;
+  min-width: 0;
+  /* Deja sitio para la barra inferior fija del móvil. */
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+}
+
+.page-flat {
+  padding-bottom: 0;
 }
 
 .brand {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* --- barra inferior (móvil) --- */
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 84px;
+  padding: 8px 12px calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+
+.nav-item {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.nav-item.active {
+  color: var(--text);
+}
+
+.nav-item.profile.active {
+  background: var(--primary-bg);
+  color: var(--primary-text);
+}
+
+.nav-item .dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+/* En el plano el botón de "Crear" va un poco más grande que el resto. */
+.nav-item .plus-lg {
+  width: 34px;
+  height: 34px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--dot-red);
+}
+
+.dot-blue {
+  background: var(--dot-blue);
+}
+
+/* --- barra lateral (escritorio) --- */
+
+.sidebar {
+  display: none;
+  width: 240px;
+  flex: none;
+  padding: 20px 12px;
+  border-right: 1px solid var(--line);
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar .brand {
+  padding: 0 12px 20px;
+}
+
+.sidebar .brand span {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+.side-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-}
-
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: linear-gradient(140deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 22px rgba(110, 231, 255, 0.35);
-}
-
-.stack {
-  display: grid;
   gap: 14px;
-  padding-top: 8px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: var(--r-chip);
+  color: var(--text-2);
+  font-size: 16px;
 }
 
-.nav {
-  position: fixed;
-  left: 50%;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  padding: 6px;
-  background: rgba(12, 16, 28, 0.86);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  backdrop-filter: blur(14px);
-  box-shadow: var(--shadow);
-  z-index: 10;
+.side-item.active {
+  background: var(--surface-2);
+  color: var(--text);
 }
 
-.nav-link {
-  padding: 9px 14px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: var(--muted);
-  transition: color 0.15s, background 0.15s;
+@media (min-width: 1024px) {
+  .sidebar {
+    display: flex;
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+
+  .page {
+    padding-bottom: 0;
+  }
 }
 
-.nav-link.active {
-  color: #06121b;
-  background: linear-gradient(140deg, var(--accent), var(--accent-2));
-  font-weight: 600;
+/* ---------------------------------------------------------------- heredado */
+/* Clases de las pantallas que todavía no pasé al diseño nuevo (perfil, test,
+   ajustes del profe). Los nombres viejos se quedan como alias para no tocar
+   todo de golpe; desaparecen cuando termine la migración. */
+
+:root {
+  --muted: var(--text-2);
+  --accent: var(--text);
+  --accent-2: var(--text-2);
+  --radius: var(--r-box);
+  --radius-sm: var(--r-chip);
+  --shadow: 0 18px 40px rgb(0 0 0 / 45%);
 }
 
-/* ---------------------------------------------------------------- tarjetas */
-
-.card {
+.box {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--r-box);
   padding: 16px;
 }
 
-.card-soft {
+.box-soft {
   background: var(--surface-2);
 }
 
-.card-head {
+.box-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
+}
+
+.box-head h2 {
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
 }
 
 .row {
@@ -175,20 +284,13 @@ p {
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--text-2);
   font-size: 0.9rem;
 }
 
 .tiny {
   font-size: 0.78rem;
-  color: var(--muted);
-}
-
-/* ---------------------------------------------------------------- botones */
-
-button {
-  font: inherit;
-  color: inherit;
+  color: var(--text-2);
 }
 
 .btn {
@@ -196,16 +298,13 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 44px;
   padding: 11px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-chip);
   border: 1px solid var(--border);
   background: var(--surface-2);
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.btn:hover {
-  border-color: rgba(110, 231, 255, 0.5);
 }
 
 .btn:active {
@@ -218,10 +317,11 @@ button {
 }
 
 .btn-primary {
-  border: none;
-  color: #06121b;
-  font-weight: 650;
-  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  border: 0;
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  border-radius: var(--r-pill);
+  font-weight: 500;
 }
 
 .btn-ghost {
@@ -233,12 +333,11 @@ button {
 }
 
 .btn-small {
+  min-height: 36px;
   padding: 7px 12px;
   font-size: 0.85rem;
-  border-radius: 10px;
+  border-radius: var(--r-chip);
 }
-
-/* ---------------------------------------------------------------- opciones del test */
 
 .option {
   display: flex;
@@ -247,20 +346,17 @@ button {
   width: 100%;
   text-align: left;
   padding: 14px;
-  border-radius: var(--radius-sm);
+  min-height: 48px;
+  border-radius: var(--r-chip);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
-.option:hover {
-  border-color: rgba(110, 231, 255, 0.45);
-}
-
 .option.selected {
-  border-color: var(--accent);
-  background: rgba(110, 231, 255, 0.1);
+  border-color: var(--text);
+  background: rgba(242, 242, 242, 0.08);
 }
 
 .option-key {
@@ -272,10 +368,8 @@ button {
   border-radius: 8px;
   background: var(--surface-2);
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--text-2);
 }
-
-/* ---------------------------------------------------------------- progreso */
 
 .bar {
   height: 8px;
@@ -287,7 +381,7 @@ button {
 .bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: var(--primary-bg);
   transition: width 0.3s;
 }
 
@@ -306,7 +400,7 @@ button {
 .skill-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: var(--primary-bg);
 }
 
 .chip {
@@ -314,20 +408,18 @@ button {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--border);
   background: var(--surface);
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--text-2);
 }
 
 .chip-level {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
 }
-
-/* ---------------------------------------------------------------- chat */
 
 .messages {
   display: grid;
@@ -338,7 +430,7 @@ button {
 .bubble {
   max-width: 88%;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: var(--r-box);
   border: 1px solid var(--border);
   background: var(--surface);
   white-space: pre-wrap;
@@ -347,8 +439,7 @@ button {
 
 .bubble-user {
   justify-self: end;
-  background: rgba(167, 139, 250, 0.16);
-  border-color: rgba(167, 139, 250, 0.35);
+  background: var(--surface-2);
 }
 
 .bubble-teacher {
@@ -365,7 +456,7 @@ button {
 }
 
 .correction {
-  color: var(--muted);
+  color: var(--text-2);
 }
 
 .correction b {
@@ -373,15 +464,13 @@ button {
   font-weight: 600;
 }
 
-.composer {
+.composer-sticky {
   position: sticky;
   bottom: 84px;
   display: grid;
   gap: 8px;
   margin-top: 10px;
 }
-
-/* ---------------------------------------------------------------- formularios */
 
 label {
   display: grid;
@@ -393,10 +482,11 @@ input,
 select,
 textarea {
   width: 100%;
+  min-height: 44px;
   padding: 11px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border);
-  background: rgba(8, 12, 22, 0.7);
+  background: var(--surface);
   color: var(--text);
   font: inherit;
 }
@@ -406,30 +496,28 @@ textarea {
   min-height: 84px;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
-  outline: 2px solid rgba(110, 231, 255, 0.45);
-  outline-offset: 1px;
-}
-
 input[type="range"] {
+  min-height: 0;
   padding: 0;
   background: transparent;
 }
 
 .field-hint {
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--text-2);
 }
-
-/* ---------------------------------------------------------------- estados */
 
 .center {
   min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px;
+}
+
+.center-box {
+  display: grid;
+  place-items: center;
+  padding: 40px 0;
 }
 
 .login-card {
@@ -443,15 +531,9 @@ input[type="range"] {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  border-top-color: var(--accent);
+  border: 2px solid var(--border);
+  border-top-color: var(--text);
   animation: spin 0.8s linear infinite;
-}
-
-.center-box {
-  display: grid;
-  place-items: center;
-  padding: 40px 0;
 }
 
 @keyframes spin {
@@ -462,7 +544,7 @@ input[type="range"] {
 
 .alert {
   padding: 11px 13px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px solid rgba(255, 122, 144, 0.4);
   background: rgba(255, 122, 144, 0.12);
   color: #ffd7de;
@@ -471,16 +553,16 @@ input[type="range"] {
 
 .note {
   padding: 11px 13px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(110, 231, 255, 0.3);
-  background: rgba(110, 231, 255, 0.08);
+  border-radius: var(--r-chip);
+  border: 1px solid var(--border);
+  background: var(--surface);
   font-size: 0.88rem;
 }
 
 .passage {
-  background: rgba(8, 12, 22, 0.55);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   padding: 14px;
   font-size: 0.95rem;
   line-height: 1.6;
@@ -490,12 +572,10 @@ input[type="range"] {
 .empty {
   padding: 26px 16px;
   text-align: center;
-  color: var(--muted);
+  color: var(--text-2);
   border: 1px dashed var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--r-box);
 }
-
-/* ---------------------------------------------------------------- avatar y personajes */
 
 .avatar {
   flex: none;
@@ -503,7 +583,7 @@ input[type="range"] {
   place-items: center;
   border-radius: 50%;
   overflow: hidden;
-  background: linear-gradient(140deg, rgba(110, 231, 255, 0.22), rgba(167, 139, 250, 0.26));
+  background: var(--surface-2);
   border: 1px solid var(--border);
   font-weight: 650;
   letter-spacing: 0.02em;
@@ -535,20 +615,16 @@ input[type="range"] {
   text-align: left;
   color: inherit;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border);
   background: var(--surface);
   scroll-snap-align: start;
   transition: border-color 0.15s, background 0.15s;
 }
 
-.persona-card:hover {
-  border-color: rgba(110, 231, 255, 0.45);
-}
-
 .persona-card.selected {
-  border-color: var(--accent);
-  background: rgba(110, 231, 255, 0.1);
+  border-color: var(--text);
+  background: var(--surface-2);
 }
 
 .persona-card strong {
@@ -576,7 +652,7 @@ input[type="range"] {
 }
 
 .avatar-option.selected {
-  border-color: var(--accent);
+  border-color: var(--text);
 }
 
 .avatar-option img {
@@ -600,12 +676,14 @@ input[type="range"] {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   font-size: 0.9rem;
   cursor: pointer;
 }
 
 .switch-row input {
   width: auto;
+  min-height: 0;
 }
 
 .teach-row {
@@ -624,19 +702,21 @@ input[type="range"] {
 }
 
 .link-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--text);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-@media (min-width: 560px) {
-  .composer {
-    bottom: 90px;
-  }
+.stack-tight {
+  display: grid;
+  gap: 8px;
 }

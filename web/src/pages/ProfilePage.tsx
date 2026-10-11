@@ -68,7 +68,7 @@ export function ProfilePage() {
   return (
     <>
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Mi perfil</h2>
           {saved ? <span className="tiny">guardado</span> : null}
         </div>

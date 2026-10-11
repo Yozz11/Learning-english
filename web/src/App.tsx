@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { Layout } from './components/Layout'
+import { AppShell } from './components/AppShell'
 import { LoadingBox } from './components/ui'
 import { SessionProvider, useSession } from './lib/session'
 import { AssessmentPage } from './pages/AssessmentPage'
@@ -21,7 +21,7 @@ function ProtectedLayout() {
     )
   }
   if (!session?.authenticated) return <Navigate to="/login" replace />
-  return <Layout />
+  return <AppShell />
 }
 
 export function App() {

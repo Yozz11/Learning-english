@@ -3,7 +3,7 @@ import type { SkillProgress } from '@english-coach/shared'
 import { PENDING_SKILLS } from '@english-coach/shared'
 
 export function Card({ children, soft = false }: { children: ReactNode; soft?: boolean }) {
-  return <section className={soft ? 'card card-soft' : 'card'}>{children}</section>
+  return <section className={soft ? 'box box-soft' : 'box'}>{children}</section>
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

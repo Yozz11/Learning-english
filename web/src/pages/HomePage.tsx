@@ -39,7 +39,7 @@ export function HomePage() {
   return (
     <>
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Ahora</h2>
           {overall !== null ? <LevelChip label={overallLabel ?? null} /> : null}
         </div>
@@ -55,7 +55,7 @@ export function HomePage() {
       </Card>
 
       <Card>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Mi nivel</h2>
           <span className="tiny">
             {data.hasAssessment && data.lastAssessmentAt
@@ -78,7 +78,7 @@ export function HomePage() {
 
       {data.topErrors.length > 0 ? (
         <Card>
-          <div className="card-head">
+          <div className="box-head">
             <h2>Errores que repito</h2>
           </div>
           <div className="stack" style={{ paddingTop: 0 }}>
@@ -95,7 +95,7 @@ export function HomePage() {
       ) : null}
 
       <Card soft>
-        <div className="card-head">
+        <div className="box-head">
           <h2>Mi profe</h2>
         </div>
         <div className="row">

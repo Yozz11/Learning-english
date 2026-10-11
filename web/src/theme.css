@@ -1,0 +1,29 @@
+/*
+ * Tokens de la interfaz. Salen tal cual del plano (docs/referencia/referencia-ui.html):
+ * si algo no está aquí, no se inventa un color en otro archivo.
+ */
+:root {
+  --bg: #121212;
+  --surface: #1e1e1e;
+  --surface-2: #2a2a2a;
+  --border: #3a3a3a;
+  --text: #f2f2f2;
+  --text-2: #9a9a9a;
+  --primary-bg: #f2f2f2;
+  --primary-text: #121212;
+  --dot-red: #ff3b30;
+  --dot-blue: #2f6bff;
+  --r-card: 24px;
+  --r-msg: 28px;
+  --r-pill: 999px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Extras que el plano no usa pero siguen su tono. */
+  --r-box: 20px;
+  --r-chip: 14px;
+  --line: #1f1f1f;
+  --good: #56d99a;
+  --warn: #ffcc66;
+  --bad: #ff7a90;
+  color-scheme: dark;
+}
