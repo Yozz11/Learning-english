@@ -3,12 +3,12 @@ import { AppShell } from './components/AppShell'
 import { LoadingBox } from './components/ui'
 import { SessionProvider, useSession } from './lib/session'
 import { AssessmentPage } from './pages/AssessmentPage'
+import { CharacterEditorPage } from './pages/CharacterEditorPage'
 import { CharacterPage } from './pages/CharacterPage'
 import { ChatPage } from './pages/ChatPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProfilePage } from './pages/ProfilePage'
-import { TeacherPage } from './pages/TeacherPage'
 import { WelcomePage } from './pages/WelcomePage'
 
 /** Si no hay sesión, todo lleva al login. */
@@ -40,7 +40,12 @@ export function App() {
           {/* El chat va por personaje: /chat solo redirige al último que usaste. */}
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:characterId" element={<ChatPage />} />
-          <Route path="/profesor" element={<TeacherPage />} />
+          {/* "Crear": la ficha del personaje. Es lo que manda en la charla. */}
+          <Route path="/crear" element={<CharacterEditorPage />} />
+          <Route path="/crear/:characterId" element={<CharacterEditorPage />} />
+          {/* El editor del profe global que había en /profesor ya no manda en las
+              charlas: ahora cada charla usa la ficha de su personaje. */}
+          <Route path="/profesor" element={<Navigate to="/crear" replace />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

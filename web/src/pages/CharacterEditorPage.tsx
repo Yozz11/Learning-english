@@ -1,8 +1,16 @@
-import type { SpanishUsage, TeacherConfig, TeacherPersona } from '@english-coach/shared'
-import { AVATAR_PRESET_IDS, AVATAR_PRESET_LABELS, TEACHER_PERSONAS } from '@english-coach/shared'
+import type { CharacterDetail, SpanishUsage, TeacherConfig, TeacherPersona } from '@english-coach/shared'
+import {
+  AVATAR_PRESET_IDS,
+  AVATAR_PRESET_LABELS,
+  DEFAULT_TEACHER_CONFIG,
+  SPANISH_USAGE_LABELS,
+  TEACHER_PERSONAS,
+  avatarSrc,
+} from '@english-coach/shared'
 import type { ChangeEvent } from 'react'
 import { useEffect, useState } from 'react'
-import { Avatar } from '../components/Avatar'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Icon } from '../components/icons'
 import { Alert, Button, Card, LoadingBox, Note, Slider } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
 import { fileToAvatarDataUrl } from '../lib/image'
@@ -16,14 +24,25 @@ import {
   type VoiceOption,
 } from '../lib/voice'
 
-const SPANISH_LABELS: Record<SpanishUsage, string> = {
-  never: 'Solo inglés, siempre',
-  when_needed: 'Español solo si me trabo',
-  often: 'Puede explicar en español',
+/*
+ * "Crear": el editor de la ficha del personaje. Es el mismo editor de siempre
+ * (el de /profesor) pero apuntando a un personaje de la biblioteca, que es lo
+ * que de verdad manda en la charla.
+ *
+ * El plano no trae pantalla de editor: esta sigue su tono y sus tokens, pero no
+ * se copian medidas de ningún marco.
+ */
+
+/** Un personaje nuevo empieza en blanco: el nombre y cómo es los pones tú. */
+function blankConfig(): TeacherConfig {
+  return { ...DEFAULT_TEACHER_CONFIG, name: '', personality: '', tagline: null }
 }
 
-export function TeacherPage() {
-  const [config, setConfig] = useState<TeacherConfig | null>(null)
+export function CharacterEditorPage() {
+  const { characterId } = useParams<{ characterId?: string }>()
+  const navigate = useNavigate()
+
+  const [config, setConfig] = useState<TeacherConfig | null>(characterId ? null : blankConfig())
   const [busy, setBusy] = useState(false)
   const [imageBusy, setImageBusy] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -31,11 +50,18 @@ export function TeacherPage() {
   const [voices, setVoices] = useState<VoiceOption[]>([])
 
   useEffect(() => {
+    if (!characterId) {
+      setConfig(blankConfig())
+      setSaved(false)
+      return
+    }
+
     let active = true
+    setConfig(null)
     api
-      .get<TeacherConfig>('/api/teacher')
+      .get<{ data: CharacterDetail }>(`/api/characters/${encodeURIComponent(characterId)}`)
       .then((result) => {
-        if (active) setConfig(result)
+        if (active) setConfig(result.data.config)
       })
       .catch((caught: unknown) => {
         if (active) setError(errorMessage(caught))
@@ -43,7 +69,7 @@ export function TeacherPage() {
     return () => {
       active = false
     }
-  }, [])
+  }, [characterId])
 
   useEffect(() => {
     // En iOS la lista llega vacía hasta que el sistema avisa; hay que releerla.
@@ -116,20 +142,45 @@ export function TeacherPage() {
     const available = englishVoices()
     setVoices(available)
     const persona = TEACHER_PERSONAS.find((item) => item.id === config?.personaId)
-    const suggestion = suggestVoice(
-      available,
-      persona?.voiceHint ?? { lang: null, gender: 'any' },
-    )
+    const suggestion = suggestVoice(available, persona?.voiceHint ?? { lang: null, gender: 'any' })
     if (suggestion) update('voice', suggestion)
     else setError('Todavía no veo las voces del dispositivo. Toca «Probar» una vez y vuelve a intentar.')
   }
 
   async function save() {
     if (!config || busy) return
+    // El nombre y cómo es son obligatorios: sin ellos el personaje no tiene voz.
+    if (!config.name.trim()) {
+      setError('Ponle un nombre: es el que se ve en la tarjeta.')
+      return
+    }
+    if (!config.personality.trim()) {
+      setError('Escribe cómo es: es lo que le da carácter en la charla.')
+      return
+    }
+
     setBusy(true)
     setError(null)
+    const payload: TeacherConfig = {
+      ...config,
+      name: config.name.trim(),
+      personality: config.personality.trim(),
+      // Cómo corrige nunca puede quedar vacío: sin él, el servidor lo rechaza.
+      correctionStyle: config.correctionStyle.trim() || DEFAULT_TEACHER_CONFIG.correctionStyle,
+    }
+
     try {
-      setConfig(await api.put<TeacherConfig>('/api/teacher', config))
+      if (characterId) {
+        const result = await api.put<{ data: CharacterDetail }>(
+          `/api/characters/${encodeURIComponent(characterId)}`,
+          payload,
+        )
+        setConfig(result.data.config)
+      } else {
+        const result = await api.post<{ data: CharacterDetail }>('/api/characters', payload)
+        // Pasamos a modo edición con el id nuevo, sin dejar rastro en el historial.
+        navigate(`/crear/${result.data.id}`, { replace: true })
+      }
       setSaved(true)
     } catch (caught) {
       setError(errorMessage(caught))
@@ -142,34 +193,43 @@ export function TeacherPage() {
   if (!config) return <LoadingBox />
 
   const persona = TEACHER_PERSONAS.find((item) => item.id === config.personaId) ?? null
+  const preview = avatarSrc(config.avatar)
 
   return (
-    <>
+    <div className="editor">
+      <div className="editor-head">
+        <Link className="link-btn back-link" to={characterId ? `/personaje/${characterId}` : '/'}>
+          <Icon name="back" size={18} />
+          Volver
+        </Link>
+        {saved ? <span className="tiny">guardado</span> : null}
+      </div>
+
+      <h1 className="editor-title">{characterId ? 'Editar personaje' : 'Crear personaje'}</h1>
+
       <Card>
-        <div className="box-head">
-          <h2>Mi profesor</h2>
-          {saved ? <span className="tiny">guardado</span> : null}
-        </div>
-        <div className="row">
-          <Avatar avatar={config.avatar} name={config.name} size={54} />
+        <div className="editor-preview">
+          <span className="ficha-img editor-face">
+            {preview ? <img src={preview} alt="" /> : config.name.trim().charAt(0).toUpperCase() || '?'}
+          </span>
           <div>
-            <strong>{config.name}</strong>
-            <p className="tiny">{persona ? `Personaje: ${persona.label}` : 'Sin personaje elegido'}</p>
+            <strong>{config.name.trim() || 'Sin nombre'}</strong>
+            <p className="tiny">{config.tagline?.trim() || persona?.tagline || 'Sin frase todavía'}</p>
           </div>
         </div>
-        <p className="muted" style={{ marginTop: 12 }}>
-          Todo esto se guarda tal cual y entra en el prompt del profesor. Nada de esto está escrito en el
-          código.
+        <p className="muted">
+          Todo esto es lo que el personaje usa de verdad en la charla: cómo te habla, qué te pregunta y cómo
+          te corrige. Nada de esto está escrito en el código.
         </p>
       </Card>
 
       <Card>
         <div className="box-head">
-          <h2>Elige un personaje</h2>
+          <h2>Elige un arquetipo</h2>
         </div>
         <p className="muted">
-          Un personaje rellena el nombre, la personalidad y el dibujo de una vez. Son inventados para esta
-          app: el que tú quieras lo describes abajo con tus palabras.
+          Un arquetipo rellena el nombre, la personalidad y el dibujo de una vez. Son inventados para esta
+          app: el personaje que tú quieras lo describes abajo con tus palabras.
         </p>
         <div className="persona-row">
           {TEACHER_PERSONAS.map((item) => (
@@ -188,13 +248,16 @@ export function TeacherPage() {
         {config.personaId ? (
           <div style={{ marginTop: 12 }}>
             <Button className="btn-small" variant="ghost" onClick={() => applyPersona(null)}>
-              Quitar personaje
+              Quitar arquetipo
             </Button>
           </div>
         ) : null}
       </Card>
 
       <Card>
+        <div className="box-head">
+          <h2>La ficha</h2>
+        </div>
         <div className="stack" style={{ paddingTop: 0 }}>
           <div>
             <span className="field-hint">Su cara</span>
@@ -232,6 +295,7 @@ export function TeacherPage() {
             <input
               value={config.name}
               maxLength={40}
+              placeholder="Ej.: Max"
               onChange={(event) => update('name', event.target.value)}
             />
           </label>
@@ -258,12 +322,12 @@ export function TeacherPage() {
             />
             <span className="field-hint">
               Descríbelo con tus palabras (quién es, cómo habla, qué le interesa). Sale mejor que poner el
-              nombre de un personaje famoso, y es el rol que interpreta el profe en la charla.
+              nombre de un personaje famoso, y es el rol que interpreta en la charla.
             </span>
           </label>
 
           <label>
-            Personalidad
+            Cómo es (obligatorio)
             <textarea
               value={config.personality}
               maxLength={400}
@@ -312,6 +376,9 @@ export function TeacherPage() {
               rows={3}
               onChange={(event) => update('correctionStyle', event.target.value)}
             />
+            <span className="field-hint">
+              Si lo dejas vacío se usa el de siempre: corrige solo lo importante y te pide intentarlo otra vez.
+            </span>
           </label>
 
           <label>
@@ -414,9 +481,9 @@ export function TeacherPage() {
               value={config.spanishUsage}
               onChange={(event) => update('spanishUsage', event.target.value as SpanishUsage)}
             >
-              {(Object.keys(SPANISH_LABELS) as SpanishUsage[]).map((usage) => (
+              {(Object.keys(SPANISH_USAGE_LABELS) as SpanishUsage[]).map((usage) => (
                 <option key={usage} value={usage}>
-                  {SPANISH_LABELS[usage]}
+                  {SPANISH_USAGE_LABELS[usage]}
                 </option>
               ))}
             </select>
@@ -480,15 +547,20 @@ export function TeacherPage() {
 
       <div className="row">
         <Button variant="primary" onClick={save} disabled={busy}>
-          {busy ? 'Guardando…' : 'Guardar'}
+          {busy ? 'Guardando…' : characterId ? 'Guardar cambios' : 'Crear personaje'}
         </Button>
+        {characterId ? (
+          <Link className="btn btn-small" to={`/personaje/${characterId}`}>
+            Ver la ficha
+          </Link>
+        ) : null}
         <span className="tiny">Los cambios no se guardan solos.</span>
       </div>
 
       <Note>
-        El profe corrige 1 o 2 errores por respuesta y apunta los que repites. El personaje cambia cómo te
+        El personaje corrige 1 o 2 errores por respuesta y apunta los que repites. El personaje cambia cómo te
         habla, nunca las reglas de corrección.
       </Note>
-    </>
+    </div>
   )
 }

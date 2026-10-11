@@ -56,7 +56,7 @@ test.describe('estructura base', () => {
     // inicio antes de probar el siguiente icono.
     const routes: [string, RegExp][] = [
       ['Chats', /\/chat$/],
-      ['Crear', /\/profesor$/],
+      ['Crear', /\/crear$/],
       ['Curso', /\/test$/],
       ['Perfil', /\/perfil$/],
       ['Inicio', /\/$/],

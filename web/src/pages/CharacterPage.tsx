@@ -8,8 +8,8 @@ import { api, errorMessage } from '../lib/api'
 
 /*
  * Ficha del personaje: quién es, cómo habla y cómo corrige. Todo lo que se ve
- * aquí es lo que el personaje usa de verdad en la charla. Editar la ficha desde
- * aquí llega en el paso siguiente de la remodelación.
+ * aquí es lo que el personaje usa de verdad en la charla, y se edita en "Crear"
+ * (/crear/:id).
  */
 const SECTIONS: { label: string; value: keyof TeacherConfig; pre?: boolean }[] = [
   { label: 'Cómo es', value: 'personality' },
@@ -74,10 +74,16 @@ export function CharacterPage() {
 
   return (
     <div className="ficha">
-      <Link className="link-btn back-link" to="/">
-        <Icon name="back" size={18} />
-        Volver
-      </Link>
+      <div className="ficha-top">
+        <Link className="link-btn back-link" to="/">
+          <Icon name="back" size={18} />
+          Volver
+        </Link>
+        <Link className="link-btn back-link" to={`/crear/${character.id}`}>
+          Editar
+          <Icon name="pencil" size={18} />
+        </Link>
+      </div>
 
       <div className="ficha-img">
         {src ? <img src={src} alt="" /> : character.name.trim().charAt(0).toUpperCase()}

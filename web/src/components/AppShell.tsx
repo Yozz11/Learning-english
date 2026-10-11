@@ -13,7 +13,7 @@ type NavEntry = { to: string; label: string; icon: IconName; end?: boolean; prof
 const NAV: NavEntry[] = [
   { to: '/', label: 'Inicio', icon: 'home', end: true },
   { to: '/chat', label: 'Chats', icon: 'chat' },
-  { to: '/profesor', label: 'Crear', icon: 'plus' },
+  { to: '/crear', label: 'Crear', icon: 'plus' },
   { to: '/test', label: 'Curso', icon: 'layers' },
   { to: '/perfil', label: 'Perfil', icon: 'user', profile: true },
 ]
@@ -66,7 +66,7 @@ export function AppShell() {
                     .join(' ')
                 }
               >
-                <Icon name={entry.icon} className={entry.to === '/profesor' ? 'i plus-lg' : 'i'} />
+                <Icon name={entry.icon} className={entry.to === '/crear' ? 'i plus-lg' : 'i'} />
               </NavLink>
             ))}
           </nav>
