@@ -59,6 +59,15 @@ export function geminiProvider(apiKey: string, model: string): AIProvider {
       }
 
       if (!response.ok) {
+        // Cuota agotada o demasiadas peticiones por minuto: mensaje claro en vez
+        // del error crudo de Google.
+        if (response.status === 429 || data.error?.status === 'RESOURCE_EXHAUSTED') {
+          throw new ApiError(
+            429,
+            'ai_quota_exhausted',
+            'Se acabó la cuota gratis de Gemini por hoy. Vuelve mañana o espera un minuto si fue solo un pico.',
+          )
+        }
         const detail = data.error?.message ?? `HTTP ${response.status}`
         throw new ApiError(502, 'ai_error', `El proveedor de IA falló: ${detail}`)
       }

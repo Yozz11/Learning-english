@@ -1,6 +1,6 @@
 import type { ChatMessage, SendMessageResponse } from '@english-coach/shared'
 import { buildSummarySystem, buildSummaryUser, buildTeacherMessages, buildTeacherSystem, parseTeacherReply } from '../ai/prompts'
-import { getProvider } from '../ai/registry'
+import { guardedProvider } from '../ai/usage'
 import {
   countMessagesByRole,
   createConversation,
@@ -79,7 +79,7 @@ export const sendMessageRoute: RouteHandler = async ({ req, env, ctx, userId, pa
     listMessages(env.DB, conversationId, RECENT_MESSAGES),
   ])
 
-  const provider = getProvider(env)
+  const provider = guardedProvider(env)
   const reply = await provider.chat({
     tag: 'teacher',
     system: buildTeacherSystem({

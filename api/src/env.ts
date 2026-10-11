@@ -7,6 +7,8 @@ export interface Env {
   AI_PROVIDER?: string
   GEMINI_MODEL?: string
   GEMINI_API_KEY?: string
+  /** Tope diario de llamadas a la IA (texto, se lee con Number). */
+  AI_DAILY_LIMIT?: string
 
   /** Contraseña de entrada a la app. */
   APP_PASSPHRASE?: string

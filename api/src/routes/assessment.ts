@@ -2,6 +2,7 @@ import type { AssessmentAnswerResponse, AssessmentResult, SkillCode } from '@eng
 import { PENDING_SKILLS, SKILL_CODES } from '@english-coach/shared'
 import { buildWritingSystem, buildWritingUser, parseWritingScore } from '../ai/prompts'
 import { getProvider } from '../ai/registry'
+import { guardedProvider } from '../ai/usage'
 import {
   MAX_QUESTIONS,
   SECTION_KEYS,
@@ -60,7 +61,7 @@ function gradeChoice(question: QuestionRow, answer: string): Grading {
 
 /** Escritura: la evalúa la IA con una rúbrica y devuelve nivel + errores. */
 async function gradeWriting(env: Env, question: QuestionRow, answer: string): Promise<Grading> {
-  const provider = getProvider(env)
+  const provider = guardedProvider(env)
   const result = await provider.chat({
     tag: 'writing',
     system: buildWritingSystem(),

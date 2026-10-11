@@ -19,7 +19,9 @@
   ],
   "vars": {
     "AI_PROVIDER": "gemini",
-    "GEMINI_MODEL": "gemini-3.6-flash"
+    "GEMINI_MODEL": "gemini-3.6-flash",
+    // Tope diario de llamadas a la IA, para que un bug no gaste la cuota gratis.
+    "AI_DAILY_LIMIT": "200"
   },
   "observability": {
     "enabled": true
