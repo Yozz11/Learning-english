@@ -4,16 +4,13 @@ import { Icon, type IconName } from './icons'
 /*
  * Estructura de la app: barra inferior en el móvil, barra lateral en el
  * escritorio. Las dos usan la misma lista, así no se separan nunca.
- *
- * Hoy existen cinco secciones. "Biblioteca" todavía no existe, así que no se
- * muestra: no se enseña un botón que no lleva a nada.
  */
 type NavEntry = { to: string; label: string; icon: IconName; end?: boolean; profile?: boolean }
 
 const NAV: NavEntry[] = [
   { to: '/', label: 'Inicio', icon: 'home', end: true },
   { to: '/chat', label: 'Chats', icon: 'chat' },
-  { to: '/crear', label: 'Crear', icon: 'plus' },
+  { to: '/subir', label: 'Subir', icon: 'plus' },
   { to: '/test', label: 'Curso', icon: 'layers' },
   { to: '/novedades', label: 'Novedades', icon: 'bell' },
   { to: '/perfil', label: 'Perfil', icon: 'user', profile: true },
@@ -65,7 +62,7 @@ export function AppShell() {
                     .join(' ')
                 }
               >
-                <Icon name={entry.icon} className={entry.to === '/crear' ? 'i plus-lg' : 'i'} />
+                <Icon name={entry.icon} className={entry.to === '/subir' ? 'i plus-lg' : 'i'} />
               </NavLink>
             ))}
           </nav>

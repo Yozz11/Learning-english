@@ -28,6 +28,10 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
   y tus errores recientes.
 - **Inicio** con la biblioteca de personajes: buscador, pestañas que filtran y ordenan, y una tarjeta por
   personaje con su frase y su contador de mensajes. Tocar una tarjeta abre su ficha completa.
+- **Subir**: mandas un audio, un PDF, una foto o un texto y te devuelve lo que dice escrito, y opcionalmente
+  traducido al español, con un par de notas de lo que conviene mirar. El archivo no se guarda en ningún
+  sitio: va a la IA y se tira. En la base solo queda el texto, para releerlo sin gastar cuota otra vez.
+  Hasta 12 MB por archivo y una llamada de la IA del día por archivo.
 - **PWA** oscura, pensada para el celular (instalable desde el navegador).
 - **Límites que me protegen**: la IP que falla 5 veces el login queda 15 minutos bloqueada, y las
   llamadas a la IA del día tienen tope (`AI_DAILY_LIMIT`): al pasarlo la app lo dice claro y no gasta cuota.
@@ -35,8 +39,8 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
 Todavía no: listening, speaking ni pronunciación (etapa 2), y el chat responde completo, sin streaming.
 
 Sobre los personajes: los que trae la app son inventados para este proyecto. El que tú quieras (con su
-cara) lo describes con tus palabras en «Crear»: así el repositorio se queda limpio y el personaje
-personal vive solo en tu configuración.
+cara) lo describes con tus palabras y los cargas desde tu copia (ver abajo): así el repositorio se queda
+limpio y el personaje personal vive solo en tu configuración.
 
 Para cargar de una vez tus propios personajes existe un script **que no va al repositorio**: vive en
 `private/` (carpeta ignorada por git) y escribe directo en la base de datos.

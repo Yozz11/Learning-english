@@ -9,7 +9,7 @@ import {
 } from '@english-coach/shared'
 import type { ChangeEvent } from 'react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Icon } from '../components/icons'
 import { Alert, Button, Card, LoadingBox, Note, Slider } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
@@ -25,24 +25,18 @@ import {
 } from '../lib/voice'
 
 /*
- * "Crear": el editor de la ficha del personaje. Es el mismo editor de siempre
- * (el de /profesor) pero apuntando a un personaje de la biblioteca, que es lo
- * que de verdad manda en la charla.
+ * El editor de la ficha del personaje. Antes también creaba personajes; ahora
+ * solo edita: se entra desde la ficha, con "Editar". Crear personajes nuevos se
+ * hace cargando tu propio archivo (ver `private/cargar-personajes.mjs`).
  *
  * El plano no trae pantalla de editor: esta sigue su tono y sus tokens, pero no
  * se copian medidas de ningún marco.
  */
 
-/** Un personaje nuevo empieza en blanco: el nombre y cómo es los pones tú. */
-function blankConfig(): TeacherConfig {
-  return { ...DEFAULT_TEACHER_CONFIG, name: '', personality: '', tagline: null }
-}
-
 export function CharacterEditorPage() {
-  const { characterId } = useParams<{ characterId?: string }>()
-  const navigate = useNavigate()
+  const { characterId } = useParams<{ characterId: string }>()
 
-  const [config, setConfig] = useState<TeacherConfig | null>(characterId ? null : blankConfig())
+  const [config, setConfig] = useState<TeacherConfig | null>(null)
   const [busy, setBusy] = useState(false)
   const [imageBusy, setImageBusy] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -50,16 +44,10 @@ export function CharacterEditorPage() {
   const [voices, setVoices] = useState<VoiceOption[]>([])
 
   useEffect(() => {
-    if (!characterId) {
-      setConfig(blankConfig())
-      setSaved(false)
-      return
-    }
-
     let active = true
     setConfig(null)
     api
-      .get<{ data: CharacterDetail }>(`/api/characters/${encodeURIComponent(characterId)}`)
+      .get<{ data: CharacterDetail }>(`/api/characters/${encodeURIComponent(characterId ?? '')}`)
       .then((result) => {
         if (active) setConfig(result.data.config)
       })
@@ -170,17 +158,11 @@ export function CharacterEditorPage() {
     }
 
     try {
-      if (characterId) {
-        const result = await api.put<{ data: CharacterDetail }>(
-          `/api/characters/${encodeURIComponent(characterId)}`,
-          payload,
-        )
-        setConfig(result.data.config)
-      } else {
-        const result = await api.post<{ data: CharacterDetail }>('/api/characters', payload)
-        // Pasamos a modo edición con el id nuevo, sin dejar rastro en el historial.
-        navigate(`/crear/${result.data.id}`, { replace: true })
-      }
+      const result = await api.put<{ data: CharacterDetail }>(
+        `/api/characters/${encodeURIComponent(characterId ?? '')}`,
+        payload,
+      )
+      setConfig(result.data.config)
       setSaved(true)
     } catch (caught) {
       setError(errorMessage(caught))
@@ -198,14 +180,14 @@ export function CharacterEditorPage() {
   return (
     <div className="pantalla">
       <div className="editor-head">
-        <Link className="link-btn back-link" to={characterId ? `/personaje/${characterId}` : '/'}>
+        <Link className="link-btn back-link" to={`/personaje/${characterId}`}>
           <Icon name="back" size={18} />
           Volver
         </Link>
         {saved ? <span className="tiny">guardado</span> : null}
       </div>
 
-      <h1 className="editor-title">{characterId ? 'Editar personaje' : 'Crear personaje'}</h1>
+      <h1 className="editor-title">Editar personaje</h1>
 
       <Card>
         <div className="editor-preview">
@@ -229,7 +211,7 @@ export function CharacterEditorPage() {
         </div>
         <p className="muted">
           Un arquetipo rellena el nombre, la personalidad y el dibujo de una vez. Son inventados para esta
-          app: el personaje que tú quieras lo describes abajo con tus palabras.
+          app: si prefieres otro, descríbelo abajo con tus palabras.
         </p>
         <div className="persona-row">
           {TEACHER_PERSONAS.map((item) => (
@@ -547,13 +529,11 @@ export function CharacterEditorPage() {
 
       <div className="row">
         <Button variant="primary" onClick={save} disabled={busy}>
-          {busy ? 'Guardando…' : characterId ? 'Guardar cambios' : 'Crear personaje'}
+          {busy ? 'Guardando…' : 'Guardar cambios'}
         </Button>
-        {characterId ? (
-          <Link className="btn btn-small" to={`/personaje/${characterId}`}>
-            Ver la ficha
-          </Link>
-        ) : null}
+        <Link className="btn btn-small" to={`/personaje/${characterId}`}>
+          Ver la ficha
+        </Link>
         <span className="tiny">Los cambios no se guardan solos.</span>
       </div>
 

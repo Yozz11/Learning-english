@@ -20,7 +20,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id']
 
 const EMPTY: Record<TabId, string> = {
-  foryou: 'Todavía no hay personajes. Crea el tuyo en «Crear».',
+  foryou: 'Todavía no hay personajes en tu biblioteca.',
   following: 'Todavía no seguís a ninguno. Abre una ficha y toca la estrella.',
   trending: 'Cuando hables con ellos, aquí aparecen los más usados.',
   new: 'No hay personajes nuevos por mirar.',
