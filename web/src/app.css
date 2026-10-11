@@ -2,8 +2,8 @@
  * Estilos de la app. Los colores y las medidas salen de los tokens de theme.css,
  * que a su vez salen del plano (docs/referencia/referencia-ui.html).
  *
- * Orden: base, iconos, estructura (barra inferior y barra lateral), y al final lo
- * heredado de la interfaz anterior mientras termino de migrar esas pantallas.
+ * Orden: base, iconos, estructura (barra inferior y barra lateral), las pantallas
+ * del plano y al final las primitivas que comparten las demás (ya migradas).
  */
 
 * {
@@ -767,7 +767,7 @@ svg.i {
 
 .chat-composer {
   flex: none;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border);
   background: var(--bg);
 }
@@ -788,6 +788,14 @@ svg.i {
   padding: 0 12px;
   border-radius: var(--r-pill);
   background: var(--surface-2);
+}
+
+/* El campo de escribir quita el borde de foco al input (queda feo dentro de la
+   píldora), así que el aviso se pone en el marco: sin esto no se ve dónde
+   estás escribiendo al ir con el teclado. Igual que el buscador de inicio. */
+.composer-field:focus-within {
+  outline: 2px solid var(--dot-blue);
+  outline-offset: 2px;
 }
 
 .composer-field input {
@@ -1359,6 +1367,21 @@ input[type="range"] {
   color: var(--text-2);
   border: 1px dashed var(--border);
   border-radius: var(--r-box);
+}
+
+/* Un error corregido en el resultado del test: la misma idea que la caja
+   "Mejor: …" de la charla, pero quieta dentro de una tarjeta. */
+.correction {
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-chip);
+  background: var(--surface-2);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.correction b {
+  font-weight: 600;
 }
 
 .avatar {

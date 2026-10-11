@@ -1,5 +1,6 @@
 import type { CharacterCard } from '@english-coach/shared'
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CharacterTile } from '../components/CharacterTile'
 import { Icon } from '../components/icons'
 import { Alert, LoadingBox } from '../components/ui'
@@ -94,15 +95,17 @@ export function HomePage() {
       <div className="topbar">
         <div className="brand">english</div>
         <div className="icons">
-          <button
-            type="button"
+          {/* La campana del plano: llevaba a "Destacados" sin avisar, que no
+              tiene nada que ver con las novedades. Ahora abre Novedades, que es
+              lo que promete el punto rojo. */}
+          <Link
             className="icon-btn"
+            to="/novedades"
             aria-label={`Novedades${hasNews ? '' : ' (nada nuevo)'}`}
-            onClick={() => setTab('new')}
           >
             <Icon name="bell" />
             {hasNews ? <span className="dot" /> : null}
-          </button>
+          </Link>
         </div>
       </div>
 
