@@ -32,7 +32,12 @@ function wait(ms: number): Promise<void> {
 
 const MAX_ATTEMPTS = 3
 
-export function geminiProvider(apiKey: string, model: string): AIProvider {
+/** La dirección de Google. Solo las pruebas la cambian (GEMINI_BASE_URL). */
+const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com'
+
+export function geminiProvider(apiKey: string, model: string, baseUrl = DEFAULT_BASE_URL): AIProvider {
+  const root = baseUrl.replace(/\/+$/, '')
+
   return {
     id: 'gemini',
 
@@ -66,7 +71,7 @@ export function geminiProvider(apiKey: string, model: string): AIProvider {
         },
       }
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`
+      const url = `${root}/v1beta/models/${encodeURIComponent(model)}:generateContent`
       let lastDetail = ''
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {

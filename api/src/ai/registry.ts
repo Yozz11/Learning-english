@@ -13,7 +13,12 @@ export function getProvider(env: Env): AIProvider {
 
   if (name === 'mock') return mockProvider()
   if (name === 'gemini') {
-    return geminiProvider(env.GEMINI_API_KEY ?? '', env.GEMINI_MODEL ?? 'gemini-3.6-flash')
+    return geminiProvider(
+      env.GEMINI_API_KEY ?? '',
+      env.GEMINI_MODEL ?? 'gemini-3.6-flash',
+      // Solo para las pruebas: apuntar a un Gemini de mentira en local.
+      env.GEMINI_BASE_URL,
+    )
   }
 
   throw new ApiError(500, 'unknown_ai_provider', `El proveedor "${name}" no está implementado.`)
