@@ -81,6 +81,7 @@ export interface ConversationRow {
   created_at: number
   updated_at: number
   last_message_at: number | null
+  character_id: string | null
 }
 
 export interface LearnerErrorRow {
@@ -752,7 +753,8 @@ export async function listConversations(
 ): Promise<Conversation[]> {
   const { results } = await db
     .prepare(
-      `SELECT id, user_id, title, summary, summary_message_count, created_at, updated_at, last_message_at
+      `SELECT id, user_id, title, summary, summary_message_count, created_at, updated_at,
+              last_message_at, character_id
        FROM conversations WHERE user_id = ?
        ORDER BY COALESCE(last_message_at, created_at) DESC LIMIT 50`,
     )
@@ -763,6 +765,7 @@ export async function listConversations(
     title: row.title,
     summary: row.summary,
     lastMessageAt: row.last_message_at,
+    characterId: row.character_id,
   }))
 }
 
@@ -770,6 +773,7 @@ export async function createConversation(
   db: D1Database,
   userId: string,
   title: string,
+  characterId: string | null = null,
 ): Promise<Conversation> {
   const now = Date.now()
   const id = crypto.randomUUID()
@@ -777,12 +781,12 @@ export async function createConversation(
   const cleanTitle = title.trim().slice(0, 80) || 'Charla'
   await db
     .prepare(
-      `INSERT INTO conversations (id, user_id, title, created_at, updated_at, last_message_at)
-       VALUES (?, ?, ?, ?, ?, NULL)`,
+      `INSERT INTO conversations (id, user_id, title, character_id, created_at, updated_at, last_message_at)
+       VALUES (?, ?, ?, ?, ?, ?, NULL)`,
     )
-    .bind(id, userId, cleanTitle, now, now)
+    .bind(id, userId, cleanTitle, characterId, now, now)
     .run()
-  return { id, title: cleanTitle, summary: null, lastMessageAt: null }
+  return { id, title: cleanTitle, summary: null, lastMessageAt: null, characterId }
 }
 
 export async function getConversation(
@@ -792,11 +796,38 @@ export async function getConversation(
 ): Promise<ConversationRow | null> {
   return db
     .prepare(
-      `SELECT id, user_id, title, summary, summary_message_count, created_at, updated_at, last_message_at
+      `SELECT id, user_id, title, summary, summary_message_count, created_at, updated_at, last_message_at, character_id
        FROM conversations WHERE id = ? AND user_id = ?`,
     )
     .bind(conversationId, userId)
     .first<ConversationRow>()
+}
+
+/** La charla más reciente con ese personaje, o `null` si todavía no hay ninguna. */
+export async function getLatestCharacterConversation(
+  db: D1Database,
+  userId: string,
+  characterId: string,
+): Promise<ConversationRow | null> {
+  return db
+    .prepare(
+      `SELECT id, user_id, title, summary, summary_message_count, created_at, updated_at, last_message_at, character_id
+       FROM conversations WHERE user_id = ? AND character_id = ?
+       ORDER BY COALESCE(last_message_at, created_at) DESC LIMIT 1`,
+    )
+    .bind(userId, characterId)
+    .first<ConversationRow>()
+}
+
+/** Convierte la fila de la base al objeto que ve la web. */
+export function toConversation(row: ConversationRow): Conversation {
+  return {
+    id: row.id,
+    title: row.title,
+    summary: row.summary,
+    lastMessageAt: row.last_message_at,
+    characterId: row.character_id,
+  }
 }
 
 export async function listMessages(

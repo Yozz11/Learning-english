@@ -37,7 +37,7 @@ export function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/personaje/:characterId" element={<CharacterPage />} />
           <Route path="/test" element={<AssessmentPage />} />
-          {/* La charla por personaje se termina en el paso 5. */}
+          {/* El chat va por personaje: /chat solo redirige al último que usaste. */}
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:characterId" element={<ChatPage />} />
           <Route path="/profesor" element={<TeacherPage />} />

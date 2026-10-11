@@ -23,7 +23,8 @@ export const listCharactersRoute: RouteHandler = async ({ env, userId }) => {
   return json({ data: await listCharacterCards(env.DB, userId) })
 }
 
-async function requireCharacter(env: Env, userId: string, id: string) {
+/** El personaje del usuario, o 404. Lo usan también las rutas de la charla. */
+export async function requireCharacter(env: Env, userId: string, id: string) {
   const row = await getCharacter(env.DB, userId, id)
   if (!row) throw new ApiError(404, 'not_found', 'Ese personaje no existe.')
   return row

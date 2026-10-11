@@ -31,9 +31,21 @@ export function toErrorResponse(error: unknown): Response {
 
 /** Lee el cuerpo JSON y falla con 400 si no es un objeto válido. */
 export async function readJsonBody(req: Request): Promise<Record<string, unknown>> {
+  const text = await req.text()
+  return parseJsonObject(text)
+}
+
+/** Igual que `readJsonBody`, pero un cuerpo vacío se lee como `{}`. */
+export async function readJsonBodyOrEmpty(req: Request): Promise<Record<string, unknown>> {
+  const text = await req.text()
+  if (text.trim() === '') return {}
+  return parseJsonObject(text)
+}
+
+function parseJsonObject(text: string): Record<string, unknown> {
   let parsed: unknown
   try {
-    parsed = await req.json()
+    parsed = JSON.parse(text) as unknown
   } catch {
     throw new ApiError(400, 'invalid_json', 'El cuerpo de la petición debe ser JSON.')
   }

@@ -28,6 +28,9 @@ function replyFor(input: ChatInput): string {
     return 'Hablamos de rutinas diarias. Te costó el presente simple en tercera persona y confundiste "have" con "be" para la edad. Repasemos eso.'
   }
 
+  // Marca de prueba: deja ver qué personaje llegó al prompt (lo usan las pruebas).
+  const role = input.system.match(/^You are (.+?),/m)?.[1]
+
   return [
     '[respuesta de prueba] Good, I understood what you wrote.',
     '',
@@ -36,6 +39,7 @@ function replyFor(input: ChatInput): string {
     `[[fix: I have 20 years | I'm 20 years old | Age uses "be", not "have". | expressions with be | grammar]]`,
     '',
     `(Recibí: "${lastUserMessage.slice(0, 80)}")`,
+    ...(role ? [`(Me llaman ${role} en esta charla.)`] : []),
   ].join('\n')
 }
 

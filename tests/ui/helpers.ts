@@ -89,10 +89,22 @@ export function expectClose(actual: number, expected: number, what: string, tole
 /** Entra con la contraseña de pruebas y espera a estar dentro. */
 export async function login(page: Page, passphrase: string = TEST_PASSPHRASE) {
   await page.setViewportSize(MOBILE)
-  await page.goto('/login')
-  await page.getByLabel('Contraseña').fill(passphrase)
-  await page.getByRole('button', { name: 'Entrar' }).click()
-  await expect(page.getByRole('navigation', { name: 'Secciones' }).first()).toBeVisible()
+  const nav = page.getByRole('navigation', { name: 'Secciones' }).first()
+
+  // La primera carga puede no haber hidratado y el botón no hacer nada: se reintenta.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await page.goto('/login')
+    await page.getByLabel('Contraseña').fill(passphrase)
+    await page.getByRole('button', { name: 'Entrar' }).click()
+    try {
+      await nav.waitFor({ state: 'visible', timeout: 10_000 })
+      return
+    } catch {
+      // Siguiente intento.
+    }
+  }
+
+  await expect(nav).toBeVisible()
 }
 
 /** Número de columnas que pinta una cuadrícula. */

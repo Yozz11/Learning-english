@@ -1,65 +1,97 @@
-import type { ChatMessage, Conversation, SendMessageResponse, TeacherConfig } from '@english-coach/shared'
-import { useEffect, useRef, useState } from 'react'
-import { Avatar } from '../components/Avatar'
-import { Alert, Button, Card, LoadingBox } from '../components/ui'
+import type {
+  CharacterCard,
+  CharacterChat,
+  ChatMessage,
+  Conversation,
+  HomeData,
+  SendMessageResponse,
+} from '@english-coach/shared'
+import { avatarSrc, scoreLabel } from '@english-coach/shared'
+import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link, Navigate, useParams } from 'react-router-dom'
+import { Icon } from '../components/icons'
+import { Alert, LoadingBox } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
 import { isSpeechSupported, speak, stopSpeaking } from '../lib/voice'
 
+/*
+ * La charla, personaje por personaje: cada uno tiene su propia conversación y
+ * su propia ficha manda en el prompt. En el móvil ocupa la pantalla completa
+ * (sin barra abajo); en el escritorio, a la derecha va el panel del personaje.
+ */
+type PanelData = { level: string; errors: string }
+
 export function ChatPage() {
-  const [conversation, setConversation] = useState<Conversation | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [teacher, setTeacher] = useState<TeacherConfig | null>(null)
+  const { characterId } = useParams()
+  const [chat, setChat] = useState<CharacterChat | null>(null)
+  const [panel, setPanel] = useState<PanelData | null>(null)
   const [draft, setDraft] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement | null>(null)
-  const bootstrapped = useRef(false)
 
   useEffect(() => {
-    // StrictMode monta dos veces en desarrollo; sin esto se crearían charlas de más.
-    if (bootstrapped.current) return
-    bootstrapped.current = true
-    void loadLatestConversation()
+    if (!characterId) return
+    let active = true
+    setLoading(true)
+    setError(null)
     api
-      .get<TeacherConfig>('/api/teacher')
-      .then(setTeacher)
-      .catch(() => {
-        // Sin la configuración la charla funciona igual: solo se pierde el avatar y la voz.
+      .get<{ data: CharacterChat }>(`/api/characters/${encodeURIComponent(characterId)}/chat`)
+      .then((result) => {
+        if (active) setChat(result.data)
+      })
+      .catch((caught: unknown) => {
+        if (active) setError(errorMessage(caught))
+      })
+      .finally(() => {
+        if (active) setLoading(false)
       })
     return () => {
-      stopSpeaking()
+      active = false
     }
+  }, [characterId])
+
+  // El panel del escritorio: tu nivel y los errores que más repites.
+  useEffect(() => {
+    api
+      .get<HomeData>('/api/home')
+      .then((home) => {
+        const measured = home.skills.filter((skill) => skill.score !== null)
+        const average =
+          measured.length > 0
+            ? measured.reduce((total, skill) => total + (skill.score ?? 0), 0) / measured.length
+            : null
+        const seen = new Set<string>()
+        const errors = home.topErrors
+          .map((item) => item.topic.trim())
+          .filter((topic) => topic !== '' && !seen.has(topic) && seen.add(topic))
+        setPanel({
+          level: average === null ? 'Sin medir todavía' : scoreLabel(average),
+          errors: errors.slice(0, 4).join(' · '),
+        })
+      })
+      .catch(() => {
+        // Sin panel la charla funciona igual.
+      })
   }, [])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages, busy])
+  }, [chat?.messages.length, busy])
 
-  async function loadLatestConversation() {
-    try {
-      const conversations = await api.get<Conversation[]>('/api/conversations')
-      const latest = conversations[0] ?? (await api.post<Conversation>('/api/conversations'))
-      await openConversation(latest)
-    } catch (caught) {
-      setError(errorMessage(caught))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function openConversation(target: Conversation) {
-    const history = await api.get<ChatMessage[]>(`/api/conversations/${target.id}/messages`)
-    setConversation(target)
-    setMessages(history)
-  }
+  useEffect(() => stopSpeaking, [])
 
   async function startNewConversation() {
-    if (busy) return
+    if (!characterId || busy) return
     setBusy(true)
     setError(null)
     try {
-      await openConversation(await api.post<Conversation>('/api/conversations'))
+      const result = await api.post<{ data: { conversation: Conversation; messages: ChatMessage[] } }>(
+        `/api/characters/${encodeURIComponent(characterId)}/chat`,
+      )
+      setChat((previous) => (previous ? { ...previous, ...result.data } : previous))
+      setDraft('')
     } catch (caught) {
       setError(errorMessage(caught))
     } finally {
@@ -67,8 +99,10 @@ export function ChatPage() {
     }
   }
 
-  async function send() {
+  async function send(event?: FormEvent) {
+    event?.preventDefault()
     const content = draft.trim()
+    const conversation = chat?.conversation
     if (!conversation || busy || content.length === 0) return
 
     setBusy(true)
@@ -82,129 +116,215 @@ export function ChatPage() {
       createdAt: Date.now(),
       corrections: [],
     }
-    setMessages((previous) => [...previous, optimistic])
+    setChat((previous) =>
+      previous ? { ...previous, messages: [...previous.messages, optimistic] } : previous,
+    )
 
     try {
       const response = await api.post<SendMessageResponse>(
         `/api/conversations/${conversation.id}/messages`,
         { content },
       )
-      setMessages((previous) => [
-        ...previous.filter((message) => message.id !== optimistic.id),
-        response.userMessage,
-        response.reply,
-      ])
-      if (teacher?.autoSpeak) speak(response.reply.content, teacher.voice)
+      setChat((previous) =>
+        previous
+          ? {
+              ...previous,
+              messages: [
+                ...previous.messages.filter((message) => message.id !== optimistic.id),
+                response.userMessage,
+                response.reply,
+              ],
+            }
+          : previous,
+      )
+      if (chat?.character.config.autoSpeak) speak(response.reply.content, chat.character.config.voice)
     } catch (caught) {
       setError(errorMessage(caught))
-      setMessages((previous) => previous.filter((message) => message.id !== optimistic.id))
+      setChat((previous) =>
+        previous
+          ? { ...previous, messages: previous.messages.filter((m) => m.id !== optimistic.id) }
+          : previous,
+      )
       setDraft(content)
     } finally {
       setBusy(false)
     }
   }
 
-  if (loading) return <LoadingBox />
+  // Sin personaje en la dirección (el botón "Chats"): se sigue con el último.
+  if (!characterId) return <LastCharacter />
 
-  const avatar = teacher?.avatar ?? null
-  const teacherName = teacher?.name ?? 'Profe'
+  if (loading) return <LoadingBox />
+  if (error && !chat) return <Alert>{error}</Alert>
+  if (!chat) return <LoadingBox />
+
+  const { character, conversation, messages } = chat
+  const config = character.config
+  const face = avatarSrc(character.avatar)
+  const lastReply = [...messages].reverse().find((message) => message.role === 'assistant')
 
   return (
-    <>
-      <Card>
-        <div className="spread">
-          <div className="row">
-            <Avatar avatar={avatar} name={teacherName} size={34} />
-            <div>
-              <h2>Charla</h2>
-              <p className="tiny">{teacherName} · {conversation?.title ?? 'Sin conversación'}</p>
-            </div>
-          </div>
-          <Button className="btn-small" variant="ghost" onClick={startNewConversation} disabled={busy}>
-            Nueva
-          </Button>
-        </div>
-      </Card>
+    <div className="chat">
+      <header className="chat-head">
+        <Link className="icon-btn" to={`/personaje/${character.id}`} aria-label="Volver a la ficha">
+          <Icon name="back" />
+        </Link>
+        <Face src={face} name={character.name} className="chat-face" />
+        <h1 className="chat-nm">{character.name}</h1>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="Otra charla"
+          onClick={startNewConversation}
+          disabled={busy}
+        >
+          <Icon name="pencil" />
+        </button>
+        {isSpeechSupported() && lastReply ? (
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Escuchar la última respuesta"
+            onClick={() => speak(lastReply.content, config.voice)}
+          >
+            <Icon name="volume" />
+          </button>
+        ) : null}
+        <button type="button" className="icon-btn off" aria-disabled="true" title="Llamada: más adelante">
+          <Icon name="phone" />
+        </button>
+      </header>
 
-      {messages.length === 0 ? (
-        <div className="empty">
-          Escribe en inglés lo que quieras. Si te equivocas, el profe te corrige lo importante.
-        </div>
-      ) : (
-        <div className="messages" aria-live="polite" aria-busy={busy}>
-          {messages.map((message) =>
-            message.role === 'user' ? (
-              <div key={message.id} className="bubble bubble-user">
-                {message.content}
+      <div className="chat-body">
+        <div className="chat-col">
+          <div className="chat-msgs" aria-live="polite" aria-busy={busy}>
+            {messages.length === 0 ? (
+              <div className="empty">
+                {character.name} todavía no dijo nada. Escribe en inglés y empieza tú.
               </div>
             ) : (
-              <div key={message.id} className="teach-row">
-                <Avatar avatar={avatar} name={teacherName} size={30} />
-                <div className="bubble bubble-teacher">
-                  {message.content}
-                  {message.corrections.length > 0 ? (
-                    <div className="corrections">
-                      {message.corrections.map((correction) => (
-                        <div key={correction.id} className="correction">
-                          <b>{correction.correction}</b>
-                          <div className="tiny">
-                            En vez de “{correction.original}” · {correction.explanation}
-                          </div>
-                        </div>
-                      ))}
+              messages.map((message) =>
+                message.role === 'user' ? (
+                  <div key={message.id} className="msg-me">
+                    {message.content}
+                  </div>
+                ) : (
+                  <Fragment key={message.id}>
+                    <div className="msg-bot">
+                      <CharacterLine text={message.content} />
                     </div>
-                  ) : null}
-                  {isSpeechSupported() ? (
-                    <div className="bubble-tools">
-                      <button
-                        type="button"
-                        className="link-btn"
-                        onClick={() => speak(message.content, teacher?.voice ?? null)}
-                      >
-                        Escuchar
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                    {message.corrections.slice(0, 2).map((correction) => (
+                      <div key={correction.id} className="fix">
+                        <b>Mejor:</b> {correction.correction}
+                        <br />
+                        {correction.explanation}
+                      </div>
+                    ))}
+                    {isSpeechSupported() ? (
+                      <div className="msg-actions">
+                        <button
+                          type="button"
+                          className="link-btn"
+                          onClick={() => speak(message.content, config.voice)}
+                        >
+                          Escuchar
+                        </button>
+                      </div>
+                    ) : null}
+                  </Fragment>
+                ),
+              )
+            )}
+            {busy ? <div className="msg-bot muted">escribiendo…</div> : null}
+            <div ref={endRef} />
+          </div>
+
+          <form className="chat-composer" onSubmit={send}>
+            <div className="composer-bar">
+              <div className="composer-field">
+                <span className="me-av" aria-hidden="true">
+                  <Icon name="user" />
+                </span>
+                <input
+                  value={draft}
+                  maxLength={2000}
+                  placeholder="Mensaje en inglés…"
+                  aria-label="Mensaje"
+                  onChange={(event) => setDraft(event.target.value)}
+                />
               </div>
-            ),
-          )}
-          {busy ? (
-            <div className="teach-row">
-              <Avatar avatar={avatar} name={teacherName} size={30} />
-              <div className="bubble bubble-teacher muted">escribiendo…</div>
+              <button
+                type="submit"
+                className="composer-send"
+                aria-label="Enviar"
+                disabled={busy || draft.trim().length === 0}
+              >
+                <Icon name="send" />
+              </button>
             </div>
-          ) : null}
-        </div>
-      )}
+            <p className="disclaimer">Esto es una IA, no una persona real.</p>
+          </form>
 
-      {error ? <Alert>{error}</Alert> : null}
-
-      <div className="composer-sticky">
-        <textarea
-          value={draft}
-          maxLength={2000}
-          placeholder="Write in English…"
-          rows={2}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault()
-              void send()
-            }
-          }}
-        />
-        <div className="spread">
-          <span className="tiny">
-            {teacher?.autoSpeak ? 'Te leo las respuestas en voz alta' : 'Enter para enviar'}
-          </span>
-          <Button variant="primary" onClick={send} disabled={busy || draft.trim().length === 0}>
-            {busy ? 'Escribiendo…' : 'Enviar'}
-          </Button>
+          {error ? <Alert>{error}</Alert> : null}
         </div>
+
+        <aside className="chat-panel" aria-label="Ficha del personaje">
+          <Face src={face} name={character.name} className="panel-face" />
+          <h2>{character.name}</h2>
+          <p>{character.tagline}</p>
+          <div className="panel-k">Tu nivel</div>
+          <div className="panel-v">{panel?.level ?? '—'}</div>
+          <div className="panel-k">Errores recientes</div>
+          <div className="panel-v">{panel?.errors || 'Todavía ninguno.'}</div>
+          <Link className="link-btn panel-link" to={`/personaje/${character.id}`}>
+            Ver la ficha completa
+          </Link>
+        </aside>
       </div>
+    </div>
+  )
+}
 
-      <div ref={endRef} />
+/**
+ * "Chats" sin personaje: sigue con el que usaste por última vez. Evita una
+ * pantalla de lista que todavía no existe.
+ */
+function LastCharacter() {
+  const [target, setTarget] = useState<string | null | undefined>(undefined)
+
+  useEffect(() => {
+    api
+      .get<{ data: CharacterCard[] }>('/api/characters')
+      .then((result) => {
+        const sorted = [...result.data].sort(
+          (a, b) => (b.lastUsedAt ?? b.createdAt) - (a.lastUsedAt ?? a.createdAt),
+        )
+        setTarget(sorted[0]?.id ?? null)
+      })
+      .catch(() => setTarget(null))
+  }, [])
+
+  if (target === undefined) return <LoadingBox />
+  if (target === null) return <Navigate to="/" replace />
+  return <Navigate to={`/chat/${target}`} replace />
+}
+
+/** Los asteriscos del personaje (*acción*) se ven en cursiva, como en el plano. */
+function CharacterLine({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/\*([^*]+)\*/g).map((part, index) =>
+        index % 2 === 1 ? <em key={index}>{part}</em> : <span key={index}>{part}</span>,
+      )}
     </>
+  )
+}
+
+/** La cara del personaje: su dibujo, o su inicial si todavía no tiene imagen. */
+function Face({ src, name, className }: { src: string | null; name: string; className: string }) {
+  return (
+    <div className={className} aria-hidden="true">
+      {src ? <img src={src} alt="" /> : name.trim().charAt(0).toUpperCase()}
+    </div>
   )
 }

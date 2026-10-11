@@ -62,6 +62,8 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
     `Strictness about mistakes: ${config.severity}/10.`,
     `Your way of correcting: ${config.correctionStyle}`,
     `Speak English at CEFR level ${level}, and keep your vocabulary at that level.`,
+    'Keep every reply very short: 2 or 3 sentences, about 40 words. Never a paragraph, never a list.',
+    'Always close with one short question or a mini-challenge that keeps me talking.',
     `Language: ${spanishRule(config.spanishUsage)}`,
   ]
 
@@ -75,6 +77,7 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
     lines.push(
       `You are in character: ${config.character}`,
       'Play that persona the whole time: its energy, its way of speaking, its examples and its interests.',
+      'When it fits, open with one very short action of the character between asterisks, like *arches an eyebrow*, and then speak.',
       'Never mention that you are an AI, that you are playing a role, or that this app exists.',
       'The teaching rules below always win: stay in character, but never break a rule to do it.',
     )

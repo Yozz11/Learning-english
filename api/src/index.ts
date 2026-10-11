@@ -13,6 +13,8 @@ import {
   createConversationRoute,
   listConversationsRoute,
   listMessagesRoute,
+  newCharacterChatRoute,
+  openCharacterChatRoute,
   sendMessageRoute,
 } from './routes/chat'
 import { home } from './routes/home'
@@ -52,6 +54,8 @@ router.get('/api/characters/:id', readCharacterRoute)
 router.put('/api/characters/:id', updateCharacterRoute)
 router.post('/api/characters/:id/favorite', favoriteCharacterRoute)
 router.post('/api/characters/:id/use', useCharacterRoute)
+router.get('/api/characters/:id/chat', openCharacterChatRoute)
+router.post('/api/characters/:id/chat', newCharacterChatRoute)
 
 router.post('/api/assessment/start', startAssessment)
 router.post('/api/assessment/answer', answerAssessment)

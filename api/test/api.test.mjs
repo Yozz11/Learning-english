@@ -63,7 +63,7 @@ async function api(pathname, options = {}) {
   const response = await fetch(`${BASE}${pathname}`, {
     method: options.method ?? 'GET',
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: options.body === undefined ? undefined : options.raw ? options.body : JSON.stringify(options.body),
   })
 
   const raw = await response.text()
@@ -332,6 +332,63 @@ describe('API de english-coach', () => {
         body: { favorite: false },
       })
       assert.equal(unmarked.data.data.favorite, false)
+    })
+
+    it('abre la charla del personaje: una sola vez, con su saludo dentro', async () => {
+      const opened = await api(`/api/characters/${created.id}/chat`)
+      assert.equal(opened.status, 200)
+      assert.equal(opened.data.data.character.id, created.id)
+      assert.equal(opened.data.data.conversation.characterId, created.id)
+      assert.equal(opened.data.data.messages.length, 1, 'la charla arranca con el saludo')
+      assert.equal(opened.data.data.messages[0].role, 'assistant')
+      assert.match(opened.data.data.messages[0].content, /Warm-up time/)
+
+      // Volver a abrirla no crea otra charla: sigue la misma.
+      const again = await api(`/api/characters/${created.id}/chat`)
+      assert.equal(again.data.data.conversation.id, opened.data.data.conversation.id)
+      assert.equal(again.data.data.messages.length, 1)
+    })
+
+    it('"otra charla" abre un historial nuevo con el mismo personaje', async () => {
+      const before = await api(`/api/characters/${created.id}/chat`)
+      const fresh = await api(`/api/characters/${created.id}/chat`, { method: 'POST' })
+      assert.equal(fresh.status, 200)
+      assert.notEqual(fresh.data.data.conversation.id, before.data.data.conversation.id)
+      assert.equal(fresh.data.data.conversation.characterId, created.id)
+      assert.equal(fresh.data.data.messages.length, 1)
+
+      // Ahora la charla del personaje es la nueva.
+      const reopened = await api(`/api/characters/${created.id}/chat`)
+      assert.equal(reopened.data.data.conversation.id, fresh.data.data.conversation.id)
+    })
+
+    it('no deja abrir la charla de un personaje que no es tuyo', async () => {
+      const missing = await api('/api/characters/no-existe/chat')
+      assert.equal(missing.status, 404)
+      assert.equal(missing.data.error, 'not_found')
+
+      const fresh = await api('/api/characters/no-existe/chat', { method: 'POST' })
+      assert.equal(fresh.status, 404)
+    })
+
+    it('crear una charla con characterId la deja atada al personaje', async () => {
+      const created_ = await api('/api/conversations', {
+        method: 'POST',
+        body: { characterId: created.id },
+      })
+      assert.equal(created_.status, 200)
+      assert.equal(created_.data.characterId, created.id)
+
+      const list = await api('/api/conversations')
+      const found = list.data.find((conversation) => conversation.id === created_.data.id)
+      assert.ok(found, 'la charla nueva debería aparecer en la lista')
+      assert.equal(found.characterId, created.id)
+    })
+
+    it('rechaza el cuerpo vacío solo cuando es JSON inválido', async () => {
+      const bad = await api('/api/conversations', { method: 'POST', body: '{', raw: true })
+      assert.equal(bad.status, 400)
+      assert.equal(bad.data.error, 'invalid_json')
     })
   })
 

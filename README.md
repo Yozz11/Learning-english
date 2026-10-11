@@ -21,10 +21,13 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
 - **Voz**: lee sus respuestas en voz alta con las voces que ya trae el dispositivo
   (`speechSynthesis`), una distinta por personaje. Sin descargas y sin costo. La app sugiere una voz
   parecida al personaje, pero la puedes cambiar a mano.
-- **Charla** con el profesor: corrige como máximo 1 o 2 errores por mensaje, prioriza los que repito y
-  los guarda para insistir después. El resumen de la conversación se regenera solo cada 6 mensajes.
+- **Charla** con el personaje que elijas: cada uno tiene su propia conversación y su ficha manda en el
+  prompt (habla, corrige y cierra preguntando como ese personaje). Corrige como máximo 1 o 2 errores por
+  mensaje, prioriza los que repito y los guarda para insistir después. El resumen de la conversación se
+  regenera solo cada 6 mensajes. En el escritorio, a la derecha se ve la ficha del personaje con tu nivel
+  y tus errores recientes.
 - **Inicio** con la biblioteca de personajes: buscador, pestañas que filtran y ordenan, y una tarjeta por
-  personaje con su frase y su contador de mensajes.
+  personaje con su frase y su contador de mensajes. Tocar una tarjeta abre su ficha completa.
 - **PWA** oscura, pensada para el celular (instalable desde el navegador).
 - **Límites que me protegen**: la IP que falla 5 veces el login queda 15 minutos bloqueada, y las
   llamadas a la IA del día tienen tope (`AI_DAILY_LIMIT`): al pasarlo la app lo dice claro y no gasta cuota.
@@ -44,7 +47,7 @@ node private/cargar-personajes.mjs --local                   # o --remoto para p
 ```
 
 La primera vez que abres la app, la biblioteca se estrena sola: si ya tenías una ficha de profe guardada
-se convierte en tu primer personaje; si no, se crean cuatro personajes inventados para este proyecto.
+se convierte en tu primer personaje; si no, se crean los seis personajes inventados para este proyecto.
 
 ## Estructura
 

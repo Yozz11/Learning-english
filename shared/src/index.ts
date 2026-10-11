@@ -423,6 +423,15 @@ export type Conversation = {
   title: string
   summary: string | null
   lastMessageAt: number | null
+  /** El personaje de la charla. `null` en las charlas viejas, sin personaje. */
+  characterId: string | null
+}
+
+/** Lo que devuelve abrir la charla de un personaje: todo en una sola llamada. */
+export type CharacterChat = {
+  character: CharacterDetail
+  conversation: Conversation
+  messages: ChatMessage[]
 }
 
 export type ChatMessage = {
