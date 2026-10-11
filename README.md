@@ -25,6 +25,8 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
   los guarda para insistir después. El resumen de la conversación se regenera solo cada 6 mensajes.
 - **Inicio** que decide qué me toca: completar el perfil, hacer el test, reforzar lo más flojo o charlar.
 - **PWA** oscura, pensada para el celular (instalable desde el navegador).
+- **Límites que me protegen**: la IP que falla 5 veces el login queda 15 minutos bloqueada, y las
+  llamadas a la IA del día tienen tope (`AI_DAILY_LIMIT`): al pasarlo la app lo dice claro y no gasta cuota.
 
 Todavía no: listening, speaking ni pronunciación (etapa 2), y el chat responde completo, sin streaming.
 
@@ -61,7 +63,8 @@ npm run dev:web
 Sin API key de Gemini la app usa un proveedor de prueba (`AI_PROVIDER=mock`) que responde con textos
 fijos. Así se puede probar todo el flujo sin gastar cuota (la escritura siempre da B1, es lo esperado).
 
-Otros comandos: `npm run typecheck` y `npm run build`.
+Otros comandos: `npm run typecheck`, `npm run build` y `npm run test:api` (las pruebas de la API levantan
+su propio servidor y su propia base de pruebas: no tocan la base local ni gastan cuota de IA).
 
 ## Variables y secretos
 
@@ -75,6 +78,7 @@ Nunca se suben al repositorio.
 | `AI_PROVIDER` | `gemini` o `mock`. |
 | `GEMINI_API_KEY` | Solo si `AI_PROVIDER=gemini`. |
 | `GEMINI_MODEL` | Por defecto `gemini-3.6-flash`. |
+| `AI_DAILY_LIMIT` | Tope de llamadas a la IA por día (por defecto 200). Al pasarlo, la app avisa en vez de gastar cuota. |
 
 Para generar un `SESSION_SECRET` nuevo: `openssl rand -base64 32`.
 
@@ -104,3 +108,6 @@ npm run build && npm run deploy --workspace api
 
 Antes de desplegar: cambiar la contraseña (la de desarrollo está en `api/.dev.vars`, que no se sube a
 git) y rotar cualquier API key que se haya pegado en un chat.
+
+Antes de tocar la base de producción, sacar copia: `npm run db:export --workspace api` (o
+`wrangler d1 export english-coach --remote --output copia.sql`). El archivo queda fuera de git.

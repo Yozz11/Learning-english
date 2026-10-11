@@ -14,7 +14,8 @@
     "build": "npm run build --workspace web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:local": "npm run db:local --workspace api",
-    "db:remote": "npm run db:remote --workspace api"
+    "db:remote": "npm run db:remote --workspace api",
+    "test:api": "npm run test --workspace api"
   },
   "engines": {
     "node": ">=20"

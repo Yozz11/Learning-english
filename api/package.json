@@ -8,7 +8,9 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc -p tsconfig.json",
     "db:local": "wrangler d1 migrations apply DB --local",
-    "db:remote": "wrangler d1 migrations apply DB --remote"
+    "db:remote": "wrangler d1 migrations apply DB --remote",
+    "db:export": "wrangler d1 export DB --local --output .wrangler/backup-local.sql",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@english-coach/shared": "*"
