@@ -3,6 +3,11 @@
   "name": "english-coach",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
+  // La app vive en https://english-coach.yulianogarzon03.workers.dev
+  // (las preview URLs quedan apagadas: no las necesito y son más puertas abiertas).
+  "workers_dev": true,
+  "preview_urls": false,
+
   "assets": {
     "directory": "../web/dist",
     "binding": "ASSETS",
@@ -13,7 +18,7 @@
     {
       "binding": "DB",
       "database_name": "english-coach",
-      "database_id": "PON_AQUI_EL_ID_DE_TU_BASE",
+      "database_id": "d360ff10-f7cf-4213-b275-e73e4a4dc41f",
       "migrations_dir": "migrations"
     }
   ],
