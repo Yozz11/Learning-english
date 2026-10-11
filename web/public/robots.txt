@@ -1,0 +1,3 @@
+# App personal: no quiero que la indexen.
+User-agent: *
+Disallow: /

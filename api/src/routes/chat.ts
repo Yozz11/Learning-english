@@ -121,13 +121,12 @@ export const sendMessageRoute: RouteHandler = async ({ req, env, ctx, userId, pa
     )
   }
 
-  const assistantMessage = await insertMessage(env.DB, {
+  const savedReply = await insertMessage(env.DB, {
     conversationId,
     role: 'assistant',
     content: parsed.text,
     meta: { provider: reply.provider, model: reply.model, corrections },
   })
-  assistantMessage.corrections = corrections
 
   const userMessageCount = await countMessagesByRole(env.DB, conversationId, 'user')
   if (userMessageCount > 0 && userMessageCount % SUMMARY_EVERY === 0) {
@@ -135,6 +134,9 @@ export const sendMessageRoute: RouteHandler = async ({ req, env, ctx, userId, pa
     ctx.waitUntil(refreshSummary(env, provider, conversationId).catch(() => undefined))
   }
 
-  const response: SendMessageResponse = { userMessage, reply: assistantMessage }
+  const response: SendMessageResponse = {
+    userMessage,
+    reply: { ...savedReply, corrections },
+  }
   return json(response)
 }

@@ -114,7 +114,7 @@ export function ChatPage() {
           Escribe en inglés lo que quieras. Si te equivocas, el profe te corrige lo importante.
         </div>
       ) : (
-        <div className="messages">
+        <div className="messages" aria-live="polite" aria-busy={busy}>
           {messages.map((message) => (
             <div
               key={message.id}

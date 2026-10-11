@@ -48,16 +48,6 @@ export type SkillProgress = {
   nextReviewAt: number | null
 }
 
-export type SkillTopic = {
-  id: string
-  parent: SkillCode
-  code: string
-  name: string
-  cefr: CefrLevel | null
-  attempts: number
-  correct: number
-}
-
 // ---------------------------------------------------------------- usuario
 
 export type Profile = {

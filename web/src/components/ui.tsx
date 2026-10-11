@@ -1,4 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { SkillProgress } from '@english-coach/shared'
+import { PENDING_SKILLS } from '@english-coach/shared'
 
 export function Card({ children, soft = false }: { children: ReactNode; soft?: boolean }) {
   return <section className={soft ? 'card card-soft' : 'card'}>{children}</section>
@@ -54,28 +56,25 @@ export function ProgressBar({ value, max }: { value: number; max: number }) {
   )
 }
 
-export function SkillMeter({
-  name,
-  label,
-  score,
-}: {
-  name: string
-  label: string | null
-  score: number | null
-}) {
-  const percent = score === null ? 0 : Math.min(100, Math.max(0, (score / 5) * 100))
+export function SkillMeter({ skill }: { skill: SkillProgress }) {
+  const measured = skill.score !== null
+  // Ojo: "sin medir" (todavía no hiciste el test) no es lo mismo que
+  // "etapa 2" (listening, speaking y pronunciación todavía no se pueden medir).
+  const comesLater = PENDING_SKILLS.includes(skill.code)
+  const percent = skill.score === null ? 0 : Math.min(100, Math.max(0, (skill.score / 5) * 100))
+
   return (
     <div className="skill">
       <div className="spread">
-        <span>{name}</span>
-        {score === null ? (
-          <span className="tiny">pendiente (etapa 2)</span>
+        <span>{skill.name}</span>
+        {measured ? (
+          <span className="chip-level">{skill.label}</span>
         ) : (
-          <span className="chip-level">{label}</span>
+          <span className="tiny">{comesLater ? 'etapa 2' : 'sin medir'}</span>
         )}
       </div>
       <div className="skill-track">
-        <div className="skill-fill" style={{ width: `${percent}%`, opacity: score === null ? 0.25 : 1 }} />
+        <div className="skill-fill" style={{ width: `${percent}%`, opacity: measured ? 1 : 0.25 }} />
       </div>
     </div>
   )

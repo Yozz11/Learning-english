@@ -12,15 +12,6 @@ import { DEFAULT_TEACHER_CONFIG, SKILL_CODES, SKILL_NAMES } from '@english-coach
 
 // Todas las consultas están aquí, con parámetros (`?`), nunca texto armado a mano.
 
-export interface SkillRow {
-  id: string
-  parent_id: string | null
-  code: string
-  name: string
-  kind: string
-  sort_order: number
-}
-
 export interface QuestionRow {
   id: string
   skill_id: string
@@ -217,13 +208,6 @@ export async function upsertTeacherConfig(
 
 // ---------------------------------------------------------------- habilidades
 
-export async function listSkills(db: D1Database): Promise<SkillRow[]> {
-  const { results } = await db
-    .prepare('SELECT id, parent_id, code, name, kind, sort_order FROM skills ORDER BY sort_order')
-    .all<SkillRow>()
-  return results
-}
-
 export async function getUserSkills(db: D1Database, userId: string): Promise<SkillProgress[]> {
   const { results } = await db
     .prepare(
@@ -292,6 +276,8 @@ export async function saveUserSkills(
            mastery = CASE WHEN excluded.score IS NULL THEN user_skills.mastery ELSE excluded.mastery END,
            attempts = user_skills.attempts + excluded.attempts,
            correct = user_skills.correct + excluded.correct,
+           -- next_review_at queda en null a propósito: la repetición espaciada
+           -- es de una etapa siguiente y todavía no la calculamos.
            last_reviewed_at = excluded.last_reviewed_at,
            next_review_at = excluded.next_review_at`,
       )
@@ -327,8 +313,21 @@ export async function listActiveQuestions(db: D1Database, sections: string[]): P
   return results
 }
 
+/** Un test que se dejó a medias no sirve para nada: se marca, no se borra. */
+export async function abandonOpenAttempts(db: D1Database, userId: string): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE assessment_attempts SET status = 'abandoned'
+       WHERE user_id = ? AND status = 'in_progress'`,
+    )
+    .bind(userId)
+    .run()
+}
+
 export async function createAttempt(db: D1Database, userId: string): Promise<string> {
   const id = crypto.randomUUID()
+  // Empezar un test cierra el anterior: si no, se acumulan intentos colgados.
+  await abandonOpenAttempts(db, userId)
   await db
     .prepare(
       'INSERT INTO assessment_attempts (id, user_id, status, started_at) VALUES (?, ?, ?, ?)',
@@ -526,14 +525,16 @@ export async function createConversation(
 ): Promise<Conversation> {
   const now = Date.now()
   const id = crypto.randomUUID()
+  // El mismo texto que se guarda es el que devuelvo, así no hay sorpresas.
+  const cleanTitle = title.trim().slice(0, 80) || 'Charla'
   await db
     .prepare(
       `INSERT INTO conversations (id, user_id, title, created_at, updated_at, last_message_at)
        VALUES (?, ?, ?, ?, ?, NULL)`,
     )
-    .bind(id, userId, title.slice(0, 80), now, now)
+    .bind(id, userId, cleanTitle, now, now)
     .run()
-  return { id, title, summary: null, lastMessageAt: null }
+  return { id, title: cleanTitle, summary: null, lastMessageAt: null }
 }
 
 export async function getConversation(

@@ -75,7 +75,8 @@ p {
   flex-direction: column;
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 16px 96px;
+  /* Los insets respetan la muesca y la barra de gestos del iPhone. */
+  padding: env(safe-area-inset-top, 0px) 16px calc(96px + env(safe-area-inset-bottom, 0px));
 }
 
 .topbar {
@@ -111,7 +112,7 @@ p {
 .nav {
   position: fixed;
   left: 50%;
-  bottom: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   display: flex;
   gap: 4px;

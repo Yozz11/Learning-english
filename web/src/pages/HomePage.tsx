@@ -64,7 +64,7 @@ export function HomePage() {
         </div>
         <div className="stack" style={{ paddingTop: 0 }}>
           {data.skills.map((skill) => (
-            <SkillMeter key={skill.code} name={skill.name} label={skill.label} score={skill.score} />
+            <SkillMeter key={skill.code} skill={skill} />
           ))}
         </div>
         {overall === null ? (

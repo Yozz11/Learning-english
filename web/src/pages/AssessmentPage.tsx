@@ -109,7 +109,7 @@ export function AssessmentPage() {
         <div className="card-head">
           <h2>{SKILL_NAMES[question.skill]}</h2>
           <span className="tiny">
-            {answered + 1} de {total}
+            {answered + 1} de {total} (máx.)
           </span>
         </div>
         <ProgressBar value={answered} max={total} />
@@ -197,7 +197,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
         </div>
         <div className="stack" style={{ paddingTop: 0 }}>
           {result.skills.map((skill) => (
-            <SkillMeter key={skill.code} name={skill.name} label={skill.label} score={skill.score} />
+            <SkillMeter key={skill.code} skill={skill} />
           ))}
         </div>
       </Card>
