@@ -373,10 +373,10 @@ Antes de la fase 0 se construyó la personalización, que no necesitaba nada de 
   (`voiceschanged`), y la lectura en voz alta necesita un gesto del usuario (de ahí el botón «Escuchar»
   en cada respuesta; el autolectura es opcional porque iOS puede bloquearla).
 
-**Regla de oro que se respetó:** el repositorio es público y no lleva ningún personaje ni dibujo con
-dueño. Los personajes con copyright que el usuario quiera usar (p. ej. Goku) viven **solo en su
-configuración personal**, como texto libre y una imagen suya — el mismo criterio que con el port de
-GTA V. Y describir un personaje por rasgos funciona mejor que pedirle al modelo que sea la IP.
+**Regla de oro que se respetó:** el repositorio es público y no lleva ningún personaje, dibujo, letra ni
+cómic con dueño. Un personaje de una franquicia (o cualquier obra ajena) vive **solo en la configuración
+personal del usuario**, como texto libre y una imagen suya — el mismo criterio que con el port de GTA V.
+Y describir un personaje por rasgos funciona mejor que pedirle al modelo que interprete una obra ajena.
 
 ---
 
