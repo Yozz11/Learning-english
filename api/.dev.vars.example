@@ -1,0 +1,14 @@
+// Copiar a .dev.vars y rellenar. .dev.vars NO se sube a git.
+
+# Contraseña con la que entro a la app.
+APP_PASSPHRASE=cambiame
+
+# Firma la cookie de sesión. Generar uno largo y aleatorio.
+SESSION_SECRET=cambiame-por-un-secreto-largo
+
+# 'mock' = respuestas fijas sin gastar cuota. 'gemini' = profesor real.
+AI_PROVIDER=mock
+
+# Solo si AI_PROVIDER=gemini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.6-flash

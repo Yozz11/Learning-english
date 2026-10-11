@@ -1,0 +1,629 @@
+import type {
+  CefrLevel,
+  ChatMessage,
+  Conversation,
+  LearnerError,
+  Profile,
+  SkillCode,
+  SkillProgress,
+  TeacherConfig,
+} from '@english-coach/shared'
+import { DEFAULT_TEACHER_CONFIG, SKILL_CODES, SKILL_NAMES } from '@english-coach/shared'
+
+// Todas las consultas están aquí, con parámetros (`?`), nunca texto armado a mano.
+
+export interface SkillRow {
+  id: string
+  parent_id: string | null
+  code: string
+  name: string
+  kind: string
+  sort_order: number
+}
+
+export interface QuestionRow {
+  id: string
+  skill_id: string
+  section: string
+  cefr: string
+  position: number
+  sort_order: number
+  type: string
+  passage_id: string | null
+  passage_title: string | null
+  passage_text: string | null
+  instructions: string
+  prompt: string
+  options: string | null
+  answer_key: string | null
+  rubric: string | null
+}
+
+export interface AttemptRow {
+  id: string
+  user_id: string
+  status: string
+  started_at: number
+  finished_at: number | null
+  result: string | null
+  provider: string | null
+  model: string | null
+}
+
+export interface AnswerRow {
+  id: string
+  attempt_id: string
+  question_id: string
+  answer: string
+  is_correct: number | null
+  score: number | null
+  cefr: string | null
+  feedback: string | null
+  created_at: number
+}
+
+export interface MessageRow {
+  id: string
+  conversation_id: string
+  role: string
+  content: string
+  meta: string | null
+  created_at: number
+}
+
+export interface ConversationRow {
+  id: string
+  user_id: string
+  title: string
+  summary: string | null
+  summary_message_count: number
+  created_at: number
+  updated_at: number
+  last_message_at: number | null
+}
+
+export interface LearnerErrorRow {
+  id: string
+  user_id: string
+  skill_id: string
+  topic: string
+  original: string
+  correction: string
+  explanation: string
+  occurrences: number
+  first_seen_at: number
+  last_seen_at: number
+}
+
+export interface ProfileRow {
+  user_id: string
+  display_name: string
+  native_language: string
+  goals: string
+  correction_preference: string
+  onboarded_at: number | null
+  updated_at: number
+}
+
+// ---------------------------------------------------------------- usuarios y perfil
+
+/** App de un solo usuario: la primera fila es mía. */
+export async function getOrCreateUserId(db: D1Database): Promise<string> {
+  const existing = await db
+    .prepare('SELECT id FROM users ORDER BY created_at LIMIT 1')
+    .first<{ id: string }>()
+  if (existing) return existing.id
+
+  const id = crypto.randomUUID()
+  const now = Date.now()
+  await db
+    .prepare('INSERT INTO users (id, created_at, last_seen_at) VALUES (?, ?, ?)')
+    .bind(id, now, now)
+    .run()
+  return id
+}
+
+export async function touchUser(db: D1Database, userId: string): Promise<void> {
+  await db.prepare('UPDATE users SET last_seen_at = ? WHERE id = ?').bind(Date.now(), userId).run()
+}
+
+export async function getProfile(db: D1Database, userId: string): Promise<Profile | null> {
+  const row = await db
+    .prepare(
+      `SELECT user_id, display_name, native_language, goals, correction_preference, onboarded_at, updated_at
+       FROM profiles WHERE user_id = ?`,
+    )
+    .bind(userId)
+    .first<ProfileRow>()
+  if (!row) return null
+
+  let goals: string[] = []
+  try {
+    const parsed: unknown = JSON.parse(row.goals)
+    if (Array.isArray(parsed)) goals = parsed.filter((item): item is string => typeof item === 'string')
+  } catch {
+    goals = []
+  }
+
+  return {
+    displayName: row.display_name,
+    nativeLanguage: row.native_language,
+    goals,
+    correctionPreference: row.correction_preference,
+    onboardedAt: row.onboarded_at,
+  }
+}
+
+export async function upsertProfile(
+  db: D1Database,
+  userId: string,
+  profile: Profile,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO profiles (user_id, display_name, native_language, goals, correction_preference, onboarded_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+       ON CONFLICT(user_id) DO UPDATE SET
+         display_name = excluded.display_name,
+         native_language = excluded.native_language,
+         goals = excluded.goals,
+         correction_preference = excluded.correction_preference,
+         onboarded_at = excluded.onboarded_at,
+         updated_at = excluded.updated_at`,
+    )
+    .bind(
+      userId,
+      profile.displayName,
+      profile.nativeLanguage,
+      JSON.stringify(profile.goals),
+      profile.correctionPreference,
+      profile.onboardedAt,
+      Date.now(),
+    )
+    .run()
+}
+
+// ---------------------------------------------------------------- profesor
+
+export async function getTeacherConfig(db: D1Database, userId: string): Promise<TeacherConfig> {
+  const row = await db
+    .prepare('SELECT config FROM teacher_profiles WHERE user_id = ?')
+    .bind(userId)
+    .first<{ config: string }>()
+  if (!row) return { ...DEFAULT_TEACHER_CONFIG }
+
+  try {
+    const parsed = JSON.parse(row.config) as Partial<TeacherConfig>
+    // Se mezcla con los valores por defecto para que añadir opciones no rompa nada.
+    return { ...DEFAULT_TEACHER_CONFIG, ...parsed }
+  } catch {
+    return { ...DEFAULT_TEACHER_CONFIG }
+  }
+}
+
+export async function upsertTeacherConfig(
+  db: D1Database,
+  userId: string,
+  config: TeacherConfig,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO teacher_profiles (user_id, config, updated_at) VALUES (?1, ?2, ?3)
+       ON CONFLICT(user_id) DO UPDATE SET config = excluded.config, updated_at = excluded.updated_at`,
+    )
+    .bind(userId, JSON.stringify(config), Date.now())
+    .run()
+}
+
+// ---------------------------------------------------------------- habilidades
+
+export async function listSkills(db: D1Database): Promise<SkillRow[]> {
+  const { results } = await db
+    .prepare('SELECT id, parent_id, code, name, kind, sort_order FROM skills ORDER BY sort_order')
+    .all<SkillRow>()
+  return results
+}
+
+export async function getUserSkills(db: D1Database, userId: string): Promise<SkillProgress[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT s.code, s.name, u.score, u.cefr, u.mastery, u.attempts, u.correct,
+              u.last_reviewed_at, u.next_review_at
+       FROM skills s
+       LEFT JOIN user_skills u ON u.skill_id = s.id AND u.user_id = ?1
+       WHERE s.kind = 'skill'
+       ORDER BY s.sort_order`,
+    )
+    .bind(userId)
+    .all<{
+      code: string
+      name: string
+      score: number | null
+      cefr: string | null
+      mastery: number | null
+      attempts: number | null
+      correct: number | null
+      last_reviewed_at: number | null
+      next_review_at: number | null
+    }>()
+
+  const byCode = new Map(results.map((row) => [row.code, row]))
+  return SKILL_CODES.map((code) => {
+    const row = byCode.get(code)
+    return {
+      code,
+      name: row?.name ?? SKILL_NAMES[code],
+      score: row?.score ?? null,
+      cefr: (row?.cefr as CefrLevel | null) ?? null,
+      label: row?.cefr ?? null,
+      mastery: row?.mastery ?? 0,
+      attempts: row?.attempts ?? 0,
+      correct: row?.correct ?? 0,
+      lastReviewedAt: row?.last_reviewed_at ?? null,
+      nextReviewAt: row?.next_review_at ?? null,
+    }
+  })
+}
+
+export interface UserSkillWrite {
+  code: SkillCode
+  score: number | null
+  cefr: string | null
+  mastery: number
+  attempts: number
+  correct: number
+}
+
+export async function saveUserSkills(
+  db: D1Database,
+  userId: string,
+  entries: UserSkillWrite[],
+): Promise<void> {
+  const now = Date.now()
+  const statements = entries.map((entry) =>
+    db
+      .prepare(
+        `INSERT INTO user_skills (user_id, skill_id, score, cefr, mastery, attempts, correct, last_reviewed_at, next_review_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+         ON CONFLICT(user_id, skill_id) DO UPDATE SET
+           score = COALESCE(excluded.score, user_skills.score),
+           cefr = COALESCE(excluded.cefr, user_skills.cefr),
+           -- Las habilidades todavía no medibles no deben borrar lo ya guardado.
+           mastery = CASE WHEN excluded.score IS NULL THEN user_skills.mastery ELSE excluded.mastery END,
+           attempts = user_skills.attempts + excluded.attempts,
+           correct = user_skills.correct + excluded.correct,
+           last_reviewed_at = excluded.last_reviewed_at,
+           next_review_at = excluded.next_review_at`,
+      )
+      .bind(
+        userId,
+        entry.code,
+        entry.score,
+        entry.cefr,
+        entry.mastery,
+        entry.attempts,
+        entry.correct,
+        entry.score === null ? null : now,
+        null,
+      ),
+  )
+  if (statements.length > 0) await db.batch(statements)
+}
+
+// ---------------------------------------------------------------- test
+
+export async function listActiveQuestions(db: D1Database, sections: string[]): Promise<QuestionRow[]> {
+  const placeholders = sections.map(() => '?').join(',')
+  const { results } = await db
+    .prepare(
+      `SELECT id, skill_id, section, cefr, position, sort_order, type, passage_id, passage_title,
+              passage_text, instructions, prompt, options, answer_key, rubric
+       FROM assessment_questions
+       WHERE active = 1 AND section IN (${placeholders})
+       ORDER BY section, position, sort_order`,
+    )
+    .bind(...sections)
+    .all<QuestionRow>()
+  return results
+}
+
+export async function createAttempt(db: D1Database, userId: string): Promise<string> {
+  const id = crypto.randomUUID()
+  await db
+    .prepare(
+      'INSERT INTO assessment_attempts (id, user_id, status, started_at) VALUES (?, ?, ?, ?)',
+    )
+    .bind(id, userId, 'in_progress', Date.now())
+    .run()
+  return id
+}
+
+export async function getAttempt(db: D1Database, attemptId: string): Promise<AttemptRow | null> {
+  return db
+    .prepare(
+      `SELECT id, user_id, status, started_at, finished_at, result, provider, model
+       FROM assessment_attempts WHERE id = ?`,
+    )
+    .bind(attemptId)
+    .first<AttemptRow>()
+}
+
+export async function listAnswers(db: D1Database, attemptId: string): Promise<AnswerRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, attempt_id, question_id, answer, is_correct, score, cefr, feedback, created_at
+       FROM assessment_answers WHERE attempt_id = ? ORDER BY created_at`,
+    )
+    .bind(attemptId)
+    .all<AnswerRow>()
+  return results
+}
+
+export async function insertAnswer(
+  db: D1Database,
+  input: {
+    attemptId: string
+    questionId: string
+    answer: string
+    isCorrect: boolean | null
+    score: number | null
+    cefr: string | null
+    feedback: string | null
+  },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO assessment_answers
+         (id, attempt_id, question_id, answer, is_correct, score, cefr, feedback, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      crypto.randomUUID(),
+      input.attemptId,
+      input.questionId,
+      input.answer,
+      input.isCorrect === null ? null : input.isCorrect ? 1 : 0,
+      input.score,
+      input.cefr,
+      input.feedback,
+      Date.now(),
+    )
+    .run()
+}
+
+export async function finishAttempt(
+  db: D1Database,
+  attemptId: string,
+  result: unknown,
+  provider: string,
+  model: string,
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE assessment_attempts
+       SET status = 'done', finished_at = ?, result = ?, provider = ?, model = ?
+       WHERE id = ?`,
+    )
+    .bind(Date.now(), JSON.stringify(result), provider, model, attemptId)
+    .run()
+}
+
+export async function getLatestFinishedAttempt(
+  db: D1Database,
+  userId: string,
+): Promise<AttemptRow | null> {
+  return db
+    .prepare(
+      `SELECT id, user_id, status, started_at, finished_at, result, provider, model
+       FROM assessment_attempts
+       WHERE user_id = ? AND status = 'done' AND result IS NOT NULL
+       ORDER BY finished_at DESC LIMIT 1`,
+    )
+    .bind(userId)
+    .first<AttemptRow>()
+}
+
+// ---------------------------------------------------------------- errores repetidos
+
+export async function upsertLearnerError(
+  db: D1Database,
+  input: {
+    userId: string
+    skill: SkillCode
+    topic: string
+    original: string
+    correction: string
+    explanation: string
+  },
+): Promise<LearnerError> {
+  const now = Date.now()
+  const topic = input.topic.slice(0, 80)
+  const original = input.original.slice(0, 200)
+  const correction = input.correction.slice(0, 200)
+  const explanation = input.explanation.slice(0, 300)
+
+  await db
+    .prepare(
+      `INSERT INTO learner_errors
+         (id, user_id, skill_id, topic, original, correction, explanation, occurrences, first_seen_at, last_seen_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?8)
+       ON CONFLICT(user_id, topic, original, correction) DO UPDATE SET
+         occurrences = learner_errors.occurrences + 1,
+         last_seen_at = excluded.last_seen_at,
+         explanation = excluded.explanation`,
+    )
+    .bind(crypto.randomUUID(), input.userId, input.skill, topic, original, correction, explanation, now)
+    .run()
+
+  const row = await db
+    .prepare(
+      `SELECT id, user_id, skill_id, topic, original, correction, explanation, occurrences, first_seen_at, last_seen_at
+       FROM learner_errors
+       WHERE user_id = ? AND topic = ? AND original = ? AND correction = ?`,
+    )
+    .bind(input.userId, topic, original, correction)
+    .first<LearnerErrorRow>()
+
+  if (!row) throw new Error('No se pudo guardar el error del alumno.')
+  return toLearnerError(row)
+}
+
+export async function listTopErrors(
+  db: D1Database,
+  userId: string,
+  limit: number,
+): Promise<LearnerError[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, user_id, skill_id, topic, original, correction, explanation, occurrences, first_seen_at, last_seen_at
+       FROM learner_errors WHERE user_id = ?
+       ORDER BY occurrences DESC, last_seen_at DESC LIMIT ?`,
+    )
+    .bind(userId, limit)
+    .all<LearnerErrorRow>()
+  return results.map(toLearnerError)
+}
+
+export function toLearnerError(row: LearnerErrorRow): LearnerError {
+  return {
+    id: row.id,
+    skill: row.skill_id as SkillCode,
+    topic: row.topic,
+    original: row.original,
+    correction: row.correction,
+    explanation: row.explanation,
+    occurrences: row.occurrences,
+    lastSeenAt: row.last_seen_at,
+  }
+}
+
+// ---------------------------------------------------------------- charla
+
+export async function listConversations(
+  db: D1Database,
+  userId: string,
+): Promise<Conversation[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, user_id, title, summary, summary_message_count, created_at, updated_at, last_message_at
+       FROM conversations WHERE user_id = ?
+       ORDER BY COALESCE(last_message_at, created_at) DESC LIMIT 50`,
+    )
+    .bind(userId)
+    .all<ConversationRow>()
+  return results.map((row) => ({
+    id: row.id,
+    title: row.title,
+    summary: row.summary,
+    lastMessageAt: row.last_message_at,
+  }))
+}
+
+export async function createConversation(
+  db: D1Database,
+  userId: string,
+  title: string,
+): Promise<Conversation> {
+  const now = Date.now()
+  const id = crypto.randomUUID()
+  await db
+    .prepare(
+      `INSERT INTO conversations (id, user_id, title, created_at, updated_at, last_message_at)
+       VALUES (?, ?, ?, ?, ?, NULL)`,
+    )
+    .bind(id, userId, title.slice(0, 80), now, now)
+    .run()
+  return { id, title, summary: null, lastMessageAt: null }
+}
+
+export async function getConversation(
+  db: D1Database,
+  userId: string,
+  conversationId: string,
+): Promise<ConversationRow | null> {
+  return db
+    .prepare(
+      `SELECT id, user_id, title, summary, summary_message_count, created_at, updated_at, last_message_at
+       FROM conversations WHERE id = ? AND user_id = ?`,
+    )
+    .bind(conversationId, userId)
+    .first<ConversationRow>()
+}
+
+export async function listMessages(
+  db: D1Database,
+  conversationId: string,
+  limit: number,
+): Promise<MessageRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, conversation_id, role, content, meta, created_at
+       FROM messages WHERE conversation_id = ?
+       ORDER BY created_at DESC LIMIT ?`,
+    )
+    .bind(conversationId, limit)
+    .all<MessageRow>()
+  return results.reverse()
+}
+
+export async function countMessagesByRole(
+  db: D1Database,
+  conversationId: string,
+  role: string,
+): Promise<number> {
+  const row = await db
+    .prepare('SELECT COUNT(*) AS total FROM messages WHERE conversation_id = ? AND role = ?')
+    .bind(conversationId, role)
+    .first<{ total: number }>()
+  return row?.total ?? 0
+}
+
+export async function insertMessage(
+  db: D1Database,
+  input: { conversationId: string; role: 'user' | 'assistant'; content: string; meta?: unknown },
+): Promise<ChatMessage> {
+  const now = Date.now()
+  const id = crypto.randomUUID()
+  await db
+    .prepare(
+      'INSERT INTO messages (id, conversation_id, role, content, meta, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    .bind(id, input.conversationId, input.role, input.content, input.meta ? JSON.stringify(input.meta) : null, now)
+    .run()
+  await db
+    .prepare('UPDATE conversations SET updated_at = ?, last_message_at = ? WHERE id = ?')
+    .bind(now, now, input.conversationId)
+    .run()
+  return { id, role: input.role, content: input.content, createdAt: now, corrections: [] }
+}
+
+export function toChatMessage(row: MessageRow): ChatMessage {
+  let corrections: LearnerError[] = []
+  if (row.meta) {
+    try {
+      const parsed = JSON.parse(row.meta) as { corrections?: LearnerError[] }
+      if (Array.isArray(parsed.corrections)) corrections = parsed.corrections
+    } catch {
+      corrections = []
+    }
+  }
+  return {
+    id: row.id,
+    role: row.role === 'assistant' ? 'assistant' : 'user',
+    content: row.content,
+    createdAt: row.created_at,
+    corrections,
+  }
+}
+
+export async function saveConversationSummary(
+  db: D1Database,
+  conversationId: string,
+  summary: string,
+  messageCount: number,
+): Promise<void> {
+  await db
+    .prepare('UPDATE conversations SET summary = ?, summary_message_count = ?, updated_at = ? WHERE id = ?')
+    .bind(summary, messageCount, Date.now(), conversationId)
+    .run()
+}
