@@ -1,9 +1,35 @@
 import type { TeacherConfig } from '@english-coach/shared'
-import { SPANISH_USAGE_OPTIONS } from '@english-coach/shared'
-import { json, readJsonBody } from '../lib/http'
+import { AVATAR_PRESET_IDS, SPANISH_USAGE_OPTIONS, TEACHER_PERSONAS } from '@english-coach/shared'
+import { ApiError, json, readJsonBody } from '../lib/http'
 import type { RouteHandler } from '../lib/router'
 import { getTeacherConfig, upsertTeacherConfig } from '../db/queries'
-import { booleanOrNull, boundedInt, oneOf, optionalString, requiredString } from '../lib/validate'
+import {
+  booleanOrNull,
+  booleanValue,
+  boundedInt,
+  oneOf,
+  optionalString,
+  requiredString,
+} from '../lib/validate'
+
+/** Una imagen reducida en el navegador ronda los 30 KB; 300 000 caracteres sobra. */
+const AVATAR_MAX_LENGTH = 300_000
+
+/** El avatar es un dibujo de la app o una imagen que subiste tú. Nada más. */
+function parseAvatar(body: Record<string, unknown>): string | null {
+  const value = optionalString(body, 'avatar', { max: AVATAR_MAX_LENGTH })
+  if (value === undefined || value === '') return null
+  if (value.startsWith('data:image/')) return value
+  if ((AVATAR_PRESET_IDS as readonly string[]).includes(value)) return value
+  throw new ApiError(400, 'invalid_field', 'El avatar debe ser una imagen o uno de los dibujos de la app.')
+}
+
+/** El arquetipo solo se usa en la interfaz: si no lo reconocemos, se ignora. */
+function parsePersonaId(body: Record<string, unknown>): string | null {
+  const value = optionalString(body, 'personaId', { max: 40 })
+  if (!value) return null
+  return TEACHER_PERSONAS.some((persona) => persona.id === value) ? value : null
+}
 
 /** Todo lo que se guarda pasa por aquí: el navegador nunca decide la forma final. */
 function parseConfig(body: Record<string, unknown>): TeacherConfig {
@@ -17,7 +43,11 @@ function parseConfig(body: Record<string, unknown>): TeacherConfig {
     englishLevelMode: oneOf(body, 'englishLevelMode', ['auto', 'fixed'] as const),
     spanishUsage: oneOf(body, 'spanishUsage', SPANISH_USAGE_OPTIONS),
     debateEnabled: booleanOrNull(body, 'debateEnabled'),
-    character: optionalString(body, 'character', { max: 60 }) || null,
+    character: optionalString(body, 'character', { max: 300 }) || null,
+    avatar: parseAvatar(body),
+    voice: optionalString(body, 'voice', { max: 120 }) || null,
+    autoSpeak: booleanValue(body, 'autoSpeak', false),
+    personaId: parsePersonaId(body),
   }
 }
 

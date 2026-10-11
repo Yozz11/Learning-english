@@ -2,6 +2,7 @@ import type { HomeData, SkillProgress } from '@english-coach/shared'
 import { scoreLabel } from '@english-coach/shared'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Avatar } from '../components/Avatar'
 import { Alert, Button, Card, LevelChip, LoadingBox, SkillMeter } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
 import { formatDate, formatRelative } from '../lib/format'
@@ -97,10 +98,13 @@ export function HomePage() {
         <div className="card-head">
           <h2>Mi profe</h2>
         </div>
-        <p>
-          <strong>{data.teacher.name}</strong>
-        </p>
-        <p className="muted">{data.teacher.personality}</p>
+        <div className="row">
+          <Avatar avatar={data.teacher.avatar} name={data.teacher.name} size={54} />
+          <div>
+            <strong>{data.teacher.name}</strong>
+            <p className="muted">{data.teacher.personality}</p>
+          </div>
+        </div>
         <div className="row" style={{ marginTop: 12 }}>
           <Link to="/profesor">
             <Button className="btn-small">Ajustar</Button>

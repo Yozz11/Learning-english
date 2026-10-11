@@ -68,6 +68,20 @@ export function booleanOrNull(body: Record<string, unknown>, name: string): bool
   return value
 }
 
+/** Como booleanOrNull, pero para casillas que siempre tienen un valor. */
+export function booleanValue(
+  body: Record<string, unknown>,
+  name: string,
+  fallback: boolean,
+): boolean {
+  const value = field(body, name)
+  if (value === undefined || value === null) return fallback
+  if (typeof value !== 'boolean') {
+    throw new ApiError(400, 'invalid_field', `El campo "${name}" debe ser verdadero o falso.`)
+  }
+  return value
+}
+
 export function oneOf<T extends string>(
   body: Record<string, unknown>,
   name: string,

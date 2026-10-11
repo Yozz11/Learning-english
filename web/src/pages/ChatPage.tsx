@@ -1,11 +1,14 @@
-import type { ChatMessage, Conversation, SendMessageResponse } from '@english-coach/shared'
+import type { ChatMessage, Conversation, SendMessageResponse, TeacherConfig } from '@english-coach/shared'
 import { useEffect, useRef, useState } from 'react'
+import { Avatar } from '../components/Avatar'
 import { Alert, Button, Card, LoadingBox } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
+import { isSpeechSupported, speak, stopSpeaking } from '../lib/voice'
 
 export function ChatPage() {
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [teacher, setTeacher] = useState<TeacherConfig | null>(null)
   const [draft, setDraft] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -18,6 +21,15 @@ export function ChatPage() {
     if (bootstrapped.current) return
     bootstrapped.current = true
     void loadLatestConversation()
+    api
+      .get<TeacherConfig>('/api/teacher')
+      .then(setTeacher)
+      .catch(() => {
+        // Sin la configuración la charla funciona igual: solo se pierde el avatar y la voz.
+      })
+    return () => {
+      stopSpeaking()
+    }
   }, [])
 
   useEffect(() => {
@@ -25,12 +37,10 @@ export function ChatPage() {
   }, [messages, busy])
 
   async function loadLatestConversation() {
-    setLoading(true)
-    setError(null)
     try {
-      const list = await api.get<Conversation[]>('/api/conversations')
-      const current = list[0] ?? (await api.post<Conversation>('/api/conversations'))
-      await openConversation(current)
+      const conversations = await api.get<Conversation[]>('/api/conversations')
+      const latest = conversations[0] ?? (await api.post<Conversation>('/api/conversations'))
+      await openConversation(latest)
     } catch (caught) {
       setError(errorMessage(caught))
     } finally {
@@ -84,6 +94,7 @@ export function ChatPage() {
         response.userMessage,
         response.reply,
       ])
+      if (teacher?.autoSpeak) speak(response.reply.content, teacher.voice)
     } catch (caught) {
       setError(errorMessage(caught))
       setMessages((previous) => previous.filter((message) => message.id !== optimistic.id))
@@ -95,13 +106,19 @@ export function ChatPage() {
 
   if (loading) return <LoadingBox />
 
+  const avatar = teacher?.avatar ?? null
+  const teacherName = teacher?.name ?? 'Profe'
+
   return (
     <>
       <Card>
         <div className="spread">
-          <div>
-            <h2>Charla</h2>
-            <p className="tiny">{conversation?.title ?? 'Sin conversación'}</p>
+          <div className="row">
+            <Avatar avatar={avatar} name={teacherName} size={34} />
+            <div>
+              <h2>Charla</h2>
+              <p className="tiny">{teacherName} · {conversation?.title ?? 'Sin conversación'}</p>
+            </div>
           </div>
           <Button className="btn-small" variant="ghost" onClick={startNewConversation} disabled={busy}>
             Nueva
@@ -115,26 +132,47 @@ export function ChatPage() {
         </div>
       ) : (
         <div className="messages" aria-live="polite" aria-busy={busy}>
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={message.role === 'user' ? 'bubble bubble-user' : 'bubble bubble-teacher'}
-            >
-              {message.content}
-              {message.corrections.length > 0 ? (
-                <div className="corrections">
-                  {message.corrections.map((correction) => (
-                    <div key={correction.id} className="correction">
-                      <b>{correction.correction}</b> — {correction.explanation}
+          {messages.map((message) =>
+            message.role === 'user' ? (
+              <div key={message.id} className="bubble bubble-user">
+                {message.content}
+              </div>
+            ) : (
+              <div key={message.id} className="teach-row">
+                <Avatar avatar={avatar} name={teacherName} size={30} />
+                <div className="bubble bubble-teacher">
+                  {message.content}
+                  {message.corrections.length > 0 ? (
+                    <div className="corrections">
+                      {message.corrections.map((correction) => (
+                        <div key={correction.id} className="correction">
+                          <b>{correction.correction}</b>
+                          <div className="tiny">
+                            En vez de “{correction.original}” · {correction.explanation}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : null}
+                  {isSpeechSupported() ? (
+                    <div className="bubble-tools">
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => speak(message.content, teacher?.voice ?? null)}
+                      >
+                        Escuchar
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          ))}
+              </div>
+            ),
+          )}
           {busy ? (
-            <div className="bubble bubble-teacher">
-              <span className="muted">escribiendo…</span>
+            <div className="teach-row">
+              <Avatar avatar={avatar} name={teacherName} size={30} />
+              <div className="bubble bubble-teacher muted">escribiendo…</div>
             </div>
           ) : null}
         </div>
@@ -145,10 +183,10 @@ export function ChatPage() {
       <div className="composer">
         <textarea
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Type in English…"
+          maxLength={2000}
+          placeholder="Write in English…"
           rows={2}
-          disabled={busy}
+          onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault()
@@ -156,10 +194,16 @@ export function ChatPage() {
             }
           }}
         />
-        <Button variant="primary" className="btn-block" onClick={send} disabled={busy || draft.trim().length === 0}>
-          {busy ? 'Pensando…' : 'Enviar'}
-        </Button>
+        <div className="spread">
+          <span className="tiny">
+            {teacher?.autoSpeak ? 'Te leo las respuestas en voz alta' : 'Enter para enviar'}
+          </span>
+          <Button variant="primary" onClick={send} disabled={busy || draft.trim().length === 0}>
+            {busy ? 'Escribiendo…' : 'Enviar'}
+          </Button>
+        </div>
       </div>
+
       <div ref={endRef} />
     </>
   )

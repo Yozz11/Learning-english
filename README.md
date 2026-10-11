@@ -11,14 +11,26 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
   borde entre lo que sé y lo que no, así que dura entre **11 y 20 preguntas** en vez de siempre lo mismo.
   Devuelve nivel A1–C2 por habilidad, fortalezas, debilidades y errores detectados.
 - **Perfil** por habilidad con nivel, aciertos y errores repetidos.
-- **Profesor IA configurable** (nombre, personalidad, humor, formalidad, severidad, forma de corregir,
-  uso del español, modo debate, personaje). Todo se edita desde la app, nada está fijo en el código.
+- **Profesor IA configurable** (nombre, personaje, personalidad, humor, formalidad, severidad, forma de
+  corregir, uso del español, modo debate). Todo se edita desde la app, nada está fijo en el código.
+- **Tu profe es quien tú elijas**: seis arquetipos listos (entrenador, profesora, amistad, mentor, rival,
+  detective) que rellenan personalidad y ajustes de una vez, o un personaje escrito por ti. El personaje
+  entra en el prompt, así que cambia de verdad cómo te habla.
+- **Avatar**: seis dibujos de la app o una imagen tuya. La foto se recorta cuadrada y se reduce a 256 px
+  en el propio teléfono (no se sube a ningún servicio de archivos).
+- **Voz**: lee sus respuestas en voz alta con las voces que ya trae el dispositivo
+  (`speechSynthesis`), una distinta por personaje. Sin descargas y sin costo. La app sugiere una voz
+  parecida al personaje, pero la puedes cambiar a mano.
 - **Charla** con el profesor: corrige como máximo 1 o 2 errores por mensaje, prioriza los que repito y
   los guarda para insistir después. El resumen de la conversación se regenera solo cada 6 mensajes.
 - **Inicio** que decide qué me toca: completar el perfil, hacer el test, reforzar lo más flojo o charlar.
 - **PWA** oscura, pensada para el celular (instalable desde el navegador).
 
 Todavía no: listening, speaking ni pronunciación (etapa 2), y el chat responde completo, sin streaming.
+
+Sobre los personajes: los que trae la app son inventados para este proyecto. El que tú quieras (con su
+cara) lo describes con tus palabras en «Mi profesor»: así el repositorio se queda limpio y el personaje
+personal vive solo en tu configuración.
 
 ## Estructura
 
@@ -68,15 +80,14 @@ Para generar un `SESSION_SECRET` nuevo: `openssl rand -base64 32`.
 
 ## Subir a GitHub
 
-El repositorio ya está inicializado y con commits, pero todavía no tiene remoto.
+El repositorio ya está en `git@github.com:Yozz11/Learning-english.git` (rama `main`) y se autentica por
+SSH con `~/.ssh/id_ed25519`. Para publicar cambios:
 
 ```sh
-# 1) pegar mi llave pública en GitHub -> Settings -> SSH keys
-cat ~/.ssh/id_ed25519.pub
-
-# 2) crear el repo (privado) y conectarlo
-git remote add origin git@github.com:MI-USUARIO/english-coach.git
-git push -u origin main
+git status
+git add -A
+git commit -m "lo que cambié"
+git push
 ```
 
 ## Despliegue (cuando toque)

@@ -54,6 +54,15 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
     `Language: ${spanishRule(config.spanishUsage)}`,
   ]
 
+  if (config.character) {
+    lines.push(
+      `You are in character: ${config.character}`,
+      'Play that persona the whole time: its energy, its way of speaking, its examples and its interests.',
+      'Never mention that you are an AI, that you are playing a role, or that this app exists.',
+      'The teaching rules below always win: stay in character, but never break a rule to do it.',
+    )
+  }
+
   if (config.debateEnabled === true) {
     lines.push('When I give an opinion, challenge it politely and make me defend my reasons.')
   }
