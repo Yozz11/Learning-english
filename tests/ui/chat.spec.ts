@@ -119,6 +119,16 @@ test.describe('charla con un personaje', () => {
     const col = await box(page, '.chat-col')
     expect(col.width, 'la columna del chat no se estira de más').toBeLessThanOrEqual(821)
 
+    // Y la cabecera va dentro de esa misma columna, no a todo lo ancho.
+    const head = await box(page, '.chat-head')
+    expectClose(head.width, col.width, 'la cabecera va dentro de la columna del plano')
+    expect(head.width, 'la cabecera no se estira a todo el ancho').toBeLessThan(DESKTOP.width - 320)
+
+    // El panel arranca arriba y llega hasta abajo, como en el plano.
+    const chat = await box(page, '.chat')
+    expectClose(panel.top, chat.top, 'el panel del plano arranca arriba')
+    expectClose(panel.height, chat.height, 'el panel del plano ocupa toda la altura')
+
     await expectNoHorizontalScroll(page, DESKTOP.width)
   })
 })

@@ -30,10 +30,8 @@ export function AppShell() {
   return (
     <div className="shell">
       <nav className="sidebar" aria-label="Secciones">
-        <div className="brand">
-          english
-          <span>Aprende inglés con tu personaje</span>
-        </div>
+        {/* El plano muestra solo la palabra: sin bajada de texto. */}
+        <div className="brand">english</div>
         {NAV.map((entry) => (
           <NavLink
             key={entry.to}

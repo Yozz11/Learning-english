@@ -44,6 +44,13 @@ test.describe('estructura base', () => {
     expectClose(sidebar.width, 240, 'ancho de la barra lateral (240 px del plano)')
     expect(sidebar.display, 'en el escritorio la barra lateral se ve').toBe('flex')
 
+    // La marca del plano: la palabra sola, grande (28 px), sin bajada de texto.
+    const brand = await box(page, '.sidebar .brand')
+    const brandReference = await referenceBox(context, '.desk .sidebar .brand', 0, DESKTOP)
+    expect(brand.fontSize, 'tamaño de la marca del plano').toBe(brandReference.fontSize)
+    expect(brand.fontSize, 'la marca del plano mide 28 px').toBe('28px')
+    await expect(page.locator('.sidebar .brand')).toHaveText('english')
+
     await expect(page.locator('.bottom-nav')).toBeHidden()
     await expectNoHorizontalScroll(page, DESKTOP.width)
   })
