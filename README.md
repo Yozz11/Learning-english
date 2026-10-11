@@ -91,5 +91,5 @@ wrangler secret put GEMINI_API_KEY
 npm run build && npm run deploy --workspace api
 ```
 
-Antes de desplegar: cambiar la contraseña (en local es `profe`) y rotar cualquier API key que se haya
-pegado en un chat.
+Antes de desplegar: cambiar la contraseña (la de desarrollo está en `api/.dev.vars`, que no se sube a
+git) y rotar cualquier API key que se haya pegado en un chat.
