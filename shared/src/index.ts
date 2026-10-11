@@ -306,6 +306,58 @@ export const TEACHER_PERSONAS: readonly TeacherPersona[] = [
   },
 ]
 
+/**
+ * Rellena una ficha nueva con lo que trae un arquetipo de la galería. Lo usan
+ * el navegador (al elegir en la galería) y el servidor (al estrenar biblioteca),
+ * así no se puede quedar uno distinto del otro.
+ */
+export function configFromPersona(persona: TeacherPersona): TeacherConfig {
+  return {
+    ...DEFAULT_TEACHER_CONFIG,
+    name: persona.teacherName,
+    personality: persona.personality,
+    humor: persona.humor,
+    formality: persona.formality,
+    severity: persona.severity,
+    correctionStyle: persona.correctionStyle,
+    spanishUsage: persona.spanishUsage,
+    character: persona.character,
+    tagline: persona.tagline,
+    speechStyle: persona.speechStyle,
+    greeting: persona.greeting,
+    avatar: persona.avatar,
+    personaId: persona.id,
+  }
+}
+
+// ---------------------------------------------------------------- personajes
+
+/** Un personaje recién creado y todavía sin abrir se marca como novedad. */
+export const CHARACTER_NEW_DAYS = 7
+
+/** La frase de la tarjeta: la que escribiste o, si no hay, cómo es el personaje. */
+export function characterTagline(config: TeacherConfig): string {
+  const text = config.tagline?.trim() || config.personality.trim()
+  return text.slice(0, 120)
+}
+
+export type CharacterCard = {
+  id: string
+  name: string
+  tagline: string
+  avatar: string | null
+  favorite: boolean
+  /** Mensajes que escribiste tú a este personaje. */
+  messageCount: number
+  lastUsedAt: number | null
+  createdAt: number
+  /** Creado hace poco y todavía sin abrir: es la novedad sin ver. */
+  isNew: boolean
+}
+
+/** La tarjeta y, además, la ficha completa: lo que abre la pantalla del personaje. */
+export type CharacterDetail = CharacterCard & { config: TeacherConfig }
+
 // ---------------------------------------------------------------- test
 
 export type QuestionType = 'mcq' | 'short' | 'writing'

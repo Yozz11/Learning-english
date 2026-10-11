@@ -9,6 +9,8 @@ dist/
 .DS_Store
 *.log
 docs/referencia/
+# Tus personajes reales y el script que los carga: no van al repo público.
+private/
 test-results/
 playwright-report/
 blob-report/

@@ -243,6 +243,98 @@ describe('API de english-coach', () => {
     assert.equal(saved.data.error, 'invalid_field')
   })
 
+  describe('personajes', () => {
+    let ficha = null
+    let created = null
+
+    it('estrena la biblioteca con la ficha que ya tenías y no la estrena dos veces', async () => {
+      const first = await api('/api/characters')
+      assert.equal(first.status, 200)
+      assert.ok(first.data.data.length >= 1, 'la biblioteca debería estrenarse sola')
+
+      // La primera trae la ficha del profe que se guardó más arriba.
+      assert.equal(first.data.data[0].name, 'Profesor de prueba')
+
+      const second = await api('/api/characters')
+      assert.equal(second.data.data.length, first.data.data.length)
+    })
+
+    it('las tarjetas traen el contador de mensajes y la marca de novedad', async () => {
+      const list = await api('/api/characters')
+      const card = list.data.data[0]
+      assert.equal(typeof card.id, 'string')
+      assert.equal(typeof card.name, 'string')
+      assert.equal(typeof card.tagline, 'string')
+      assert.equal(typeof card.messageCount, 'number')
+      assert.equal(card.favorite, false)
+      assert.equal(card.isNew, true, 'un personaje recién estrenado es novedad')
+    })
+
+    it('crea un personaje y lo devuelve en la lista', async () => {
+      const current = await api('/api/teacher')
+      ficha = { ...current.data, name: 'Personaje de prueba', tagline: 'Frase corta de prueba.' }
+
+      const response = await api('/api/characters', { method: 'POST', body: ficha })
+      assert.equal(response.status, 201)
+      assert.equal(response.data.data.name, 'Personaje de prueba')
+      assert.equal(response.data.data.tagline, 'Frase corta de prueba.')
+      assert.equal(response.data.data.favorite, false)
+      created = response.data.data
+
+      const list = await api('/api/characters')
+      assert.ok(list.data.data.some((card) => card.id === created.id))
+    })
+
+    it('rechaza una ficha sin nombre', async () => {
+      const response = await api('/api/characters', { method: 'POST', body: { ...ficha, name: '' } })
+      assert.equal(response.status, 400)
+      assert.equal(response.data.error, 'invalid_field')
+    })
+
+    it('no deja leer el personaje de otra cuenta', async () => {
+      const response = await api('/api/characters/no-existe')
+      assert.equal(response.status, 404)
+      assert.equal(response.data.error, 'not_found')
+    })
+
+    it('lee la ficha completa', async () => {
+      const response = await api(`/api/characters/${created.id}`)
+      assert.equal(response.status, 200)
+      assert.equal(response.data.data.id, created.id)
+      assert.ok(response.data.data.config, 'la ficha debería venir con su configuración')
+      assert.equal(response.data.data.config.name, 'Personaje de prueba')
+    })
+
+    it('edita la ficha', async () => {
+      const response = await api(`/api/characters/${created.id}`, {
+        method: 'PUT',
+        body: { ...ficha, name: 'Personaje editado', tagline: 'Frase nueva' },
+      })
+      assert.equal(response.status, 200)
+      assert.equal(response.data.data.name, 'Personaje editado')
+
+      const list = await api('/api/characters')
+      const card = list.data.data.find((entry) => entry.id === created.id)
+      assert.equal(card.name, 'Personaje editado')
+      assert.equal(card.tagline, 'Frase nueva')
+    })
+
+    it('marca y desmarca el favorito', async () => {
+      const marked = await api(`/api/characters/${created.id}/favorite`, {
+        method: 'POST',
+        body: { favorite: true },
+      })
+      assert.equal(marked.status, 200)
+      assert.equal(marked.data.data.favorite, true)
+
+      const unmarked = await api(`/api/characters/${created.id}/favorite`, {
+        method: 'POST',
+        body: { favorite: false },
+      })
+      assert.equal(unmarked.data.data.favorite, false)
+    })
+  })
+
   it('frena las llamadas de IA al llegar al tope del día', async () => {
     const created = await api('/api/conversations', { method: 'POST' })
     assert.equal(created.status, 200)

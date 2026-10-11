@@ -23,7 +23,8 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
   parecida al personaje, pero la puedes cambiar a mano.
 - **Charla** con el profesor: corrige como máximo 1 o 2 errores por mensaje, prioriza los que repito y
   los guarda para insistir después. El resumen de la conversación se regenera solo cada 6 mensajes.
-- **Inicio** que decide qué me toca: completar el perfil, hacer el test, reforzar lo más flojo o charlar.
+- **Inicio** con la biblioteca de personajes: buscador, pestañas que filtran y ordenan, y una tarjeta por
+  personaje con su frase y su contador de mensajes.
 - **PWA** oscura, pensada para el celular (instalable desde el navegador).
 - **Límites que me protegen**: la IP que falla 5 veces el login queda 15 minutos bloqueada, y las
   llamadas a la IA del día tienen tope (`AI_DAILY_LIMIT`): al pasarlo la app lo dice claro y no gasta cuota.
@@ -31,8 +32,19 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
 Todavía no: listening, speaking ni pronunciación (etapa 2), y el chat responde completo, sin streaming.
 
 Sobre los personajes: los que trae la app son inventados para este proyecto. El que tú quieras (con su
-cara) lo describes con tus palabras en «Mi profesor»: así el repositorio se queda limpio y el personaje
+cara) lo describes con tus palabras en «Crear»: así el repositorio se queda limpio y el personaje
 personal vive solo en tu configuración.
+
+Para cargar de una vez tus propios personajes existe un script **que no va al repositorio**: vive en
+`private/` (carpeta ignorada por git) y escribe directo en la base de datos.
+
+```sh
+cp private/personajes.ejemplo.json private/personajes.json   # tus datos, fuera de git
+node private/cargar-personajes.mjs --local                   # o --remoto para producción
+```
+
+La primera vez que abres la app, la biblioteca se estrena sola: si ya tenías una ficha de profe guardada
+se convierte en tu primer personaje; si no, se crean cuatro personajes inventados para este proyecto.
 
 ## Estructura
 
@@ -63,8 +75,9 @@ npm run dev:web
 Sin API key de Gemini la app usa un proveedor de prueba (`AI_PROVIDER=mock`) que responde con textos
 fijos. Así se puede probar todo el flujo sin gastar cuota (la escritura siempre da B1, es lo esperado).
 
-Otros comandos: `npm run typecheck`, `npm run build` y `npm run test:api` (las pruebas de la API levantan
-su propio servidor y su propia base de pruebas: no tocan la base local ni gastan cuota de IA).
+Otros comandos: `npm run typecheck`, `npm run build`, `npm run test:api` y `npm run test:ui` (las pruebas
+levantan su propio servidor y su propia base: no tocan la base local ni gastan cuota de IA). Las de
+interfaz comparan las medidas con el plano de `docs/referencia/` (que vive fuera de git).
 
 ## Variables y secretos
 

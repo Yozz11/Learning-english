@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell'
 import { LoadingBox } from './components/ui'
 import { SessionProvider, useSession } from './lib/session'
 import { AssessmentPage } from './pages/AssessmentPage'
+import { CharacterPage } from './pages/CharacterPage'
 import { ChatPage } from './pages/ChatPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -34,8 +35,11 @@ export function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/personaje/:characterId" element={<CharacterPage />} />
           <Route path="/test" element={<AssessmentPage />} />
+          {/* La charla por personaje se termina en el paso 5. */}
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat/:characterId" element={<ChatPage />} />
           <Route path="/profesor" element={<TeacherPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

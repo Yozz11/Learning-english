@@ -16,6 +16,14 @@ import {
   sendMessageRoute,
 } from './routes/chat'
 import { home } from './routes/home'
+import {
+  createCharacterRoute,
+  favoriteCharacterRoute,
+  listCharactersRoute,
+  readCharacterRoute,
+  updateCharacterRoute,
+  useCharacterRoute,
+} from './routes/characters'
 import { readProfile, saveProfile } from './routes/profile'
 import { readTeacher, saveTeacher } from './routes/teacher'
 
@@ -37,6 +45,13 @@ router.put('/api/profile', saveProfile)
 
 router.get('/api/teacher', readTeacher)
 router.put('/api/teacher', saveTeacher)
+
+router.get('/api/characters', listCharactersRoute)
+router.post('/api/characters', createCharacterRoute)
+router.get('/api/characters/:id', readCharacterRoute)
+router.put('/api/characters/:id', updateCharacterRoute)
+router.post('/api/characters/:id/favorite', favoriteCharacterRoute)
+router.post('/api/characters/:id/use', useCharacterRoute)
 
 router.post('/api/assessment/start', startAssessment)
 router.post('/api/assessment/answer', answerAssessment)

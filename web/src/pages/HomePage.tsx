@@ -1,22 +1,75 @@
-import type { HomeData, SkillProgress } from '@english-coach/shared'
-import { scoreLabel } from '@english-coach/shared'
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Avatar } from '../components/Avatar'
-import { Alert, Button, Card, LevelChip, LoadingBox, SkillMeter } from '../components/ui'
+import type { CharacterCard } from '@english-coach/shared'
+import { useEffect, useMemo, useState } from 'react'
+import { CharacterTile } from '../components/CharacterTile'
+import { Icon } from '../components/icons'
+import { Alert, LoadingBox } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
-import { formatDate, formatRelative } from '../lib/format'
+import { useSession } from '../lib/session'
+
+/*
+ * Inicio: la biblioteca de personajes del usuario. Cuatro pestañas que filtran
+ * u ordenan la misma lista, y un buscador por nombre o por frase.
+ */
+const TABS = [
+  { id: 'foryou', label: 'Para ti' },
+  { id: 'following', label: 'Siguiendo' },
+  { id: 'trending', label: 'Tendencia' },
+  { id: 'new', label: 'Destacados' },
+] as const
+
+type TabId = (typeof TABS)[number]['id']
+
+const EMPTY: Record<TabId, string> = {
+  foryou: 'Todavía no hay personajes. Crea el tuyo en «Crear».',
+  following: 'Todavía no seguís a ninguno. Abre una ficha y toca la estrella.',
+  trending: 'Cuando hables con ellos, aquí aparecen los más usados.',
+  new: 'No hay personajes nuevos por mirar.',
+}
+
+/** Qué se ve en cada pestaña: se filtra por el buscador y después se ordena. */
+function visibleCharacters(all: CharacterCard[], tab: TabId, query: string): CharacterCard[] {
+  const needle = query.trim().toLowerCase()
+  const found = needle
+    ? all.filter(
+        (character) =>
+          character.name.toLowerCase().includes(needle) ||
+          character.tagline.toLowerCase().includes(needle),
+      )
+    : all
+
+  switch (tab) {
+    case 'following':
+      return found.filter((character) => character.favorite)
+    case 'trending':
+      return [...found].sort(
+        (a, b) => b.messageCount - a.messageCount || a.name.localeCompare(b.name),
+      )
+    case 'new':
+      return [...found].sort((a, b) => b.createdAt - a.createdAt)
+    default:
+      return [...found].sort((a, b) => (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0))
+  }
+}
+
+/** El "@usuario" del plano es el nombre del perfil, sin espacios. */
+function profileHandle(displayName: string | null): string {
+  const clean = (displayName ?? '').trim().replace(/\s+/g, '').toLowerCase()
+  return clean || 'tú'
+}
 
 export function HomePage() {
-  const [data, setData] = useState<HomeData | null>(null)
+  const { session } = useSession()
+  const [characters, setCharacters] = useState<CharacterCard[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [tab, setTab] = useState<TabId>('foryou')
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     let active = true
     api
-      .get<HomeData>('/api/home')
+      .get<{ data: CharacterCard[] }>('/api/characters')
       .then((result) => {
-        if (active) setData(result)
+        if (active) setCharacters(result.data)
       })
       .catch((caught: unknown) => {
         if (active) setError(errorMessage(caught))
@@ -26,102 +79,73 @@ export function HomePage() {
     }
   }, [])
 
-  if (error) return <Alert>{error}</Alert>
-  if (!data) return <LoadingBox />
-
-  const measured = data.skills.filter(
-    (skill): skill is SkillProgress & { score: number } => skill.score !== null,
+  const list = useMemo(
+    () => (characters ? visibleCharacters(characters, tab, query) : []),
+    [characters, tab, query],
   )
-  const overall =
-    measured.length > 0 ? measured.reduce((total, skill) => total + skill.score, 0) / measured.length : null
-  const overallLabel = overall === null ? null : scoreLabel(overall)
+  const hasNews = (characters ?? []).some((character) => character.isNew)
+  const handle = profileHandle(session?.displayName ?? null)
+
+  if (error) return <Alert>{error}</Alert>
+  if (!characters) return <LoadingBox />
 
   return (
-    <>
-      <Card>
-        <div className="box-head">
-          <h2>Ahora</h2>
-          {overall !== null ? <LevelChip label={overallLabel ?? null} /> : null}
+    <div className="home">
+      <div className="topbar">
+        <div className="brand">english</div>
+        <div className="icons">
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label={`Novedades${hasNews ? '' : ' (nada nuevo)'}`}
+            onClick={() => setTab('new')}
+          >
+            <Icon name="bell" />
+            {hasNews ? <span className="dot" /> : null}
+          </button>
         </div>
-        <h1>{data.task.title}</h1>
-        <p className="muted" style={{ marginTop: 6 }}>
-          {data.task.description}
-        </p>
-        <div style={{ marginTop: 14 }}>
-          <Link to={data.task.href}>
-            <Button variant="primary">Vamos</Button>
-          </Link>
-        </div>
-      </Card>
+      </div>
 
-      <Card>
-        <div className="box-head">
-          <h2>Mi nivel</h2>
-          <span className="tiny">
-            {data.hasAssessment && data.lastAssessmentAt
-              ? `medido ${formatRelative(data.lastAssessmentAt)}`
-              : 'sin medir'}
-          </span>
-        </div>
-        <div className="stack" style={{ paddingTop: 0 }}>
-          {data.skills.map((skill) => (
-            <SkillMeter key={skill.code} skill={skill} />
+      <div className="search">
+        <Icon name="search" />
+        <input
+          type="search"
+          value={query}
+          aria-label="Buscar personaje"
+          placeholder="Buscar personaje"
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
+
+      <div className="tabs" role="tablist" aria-label="Filtros de personajes">
+        {TABS.map((entry) => (
+          <button
+            key={entry.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === entry.id}
+            className={tab === entry.id ? 'tab active' : 'tab'}
+            onClick={() => setTab(entry.id)}
+          >
+            {entry.label}
+            {entry.id === 'new' && (characters ?? []).some((character) => character.isNew) ? (
+              <span className="dot dot-blue" aria-hidden="true" />
+            ) : null}
+          </button>
+        ))}
+      </div>
+
+      {list.length === 0 ? (
+        <p className="empty" style={{ margin: '20px 16px' }}>
+          {query.trim() ? 'No encontré ningún personaje con ese nombre.' : EMPTY[tab]}
+        </p>
+      ) : (
+        <div className="grid">
+          {list.map((character) => (
+            <CharacterTile key={character.id} character={character} handle={handle} />
           ))}
         </div>
-        {overall === null ? (
-          <p className="tiny" style={{ marginTop: 12 }}>
-            El test de nivel mide gramática, vocabulario, lectura y escritura. Listening, speaking y
-            pronunciación quedan para la etapa 2.
-          </p>
-        ) : null}
-      </Card>
-
-      {data.topErrors.length > 0 ? (
-        <Card>
-          <div className="box-head">
-            <h2>Errores que repito</h2>
-          </div>
-          <div className="stack" style={{ paddingTop: 0 }}>
-            {data.topErrors.map((mistake) => (
-              <div key={mistake.id} className="correction">
-                <b>{mistake.correction}</b>
-                <div className="tiny">
-                  En vez de “{mistake.original}” · x{mistake.occurrences}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      ) : null}
-
-      <Card soft>
-        <div className="box-head">
-          <h2>Mi profe</h2>
-        </div>
-        <div className="row">
-          <Avatar avatar={data.teacher.avatar} name={data.teacher.name} size={54} />
-          <div>
-            <strong>{data.teacher.name}</strong>
-            <p className="muted">{data.teacher.personality}</p>
-          </div>
-        </div>
-        <div className="row" style={{ marginTop: 12 }}>
-          <Link to="/profesor">
-            <Button className="btn-small">Ajustar</Button>
-          </Link>
-          <Link to="/chat">
-            <Button className="btn-small" variant="ghost">
-              Hablar
-            </Button>
-          </Link>
-        </div>
-      </Card>
-
-      <p className="tiny" style={{ textAlign: 'center' }}>
-        {data.hasAssessment && data.lastAssessmentAt
-          ? `Último test: ${formatDate(data.lastAssessmentAt)}`
-          : 'Todavía no hiciste el test de nivel.'}
-      </p>
-    </>
+      )}
+    </div>
   )
 }

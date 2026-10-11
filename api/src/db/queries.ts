@@ -1,5 +1,7 @@
 import type {
   CefrLevel,
+  CharacterCard,
+  CharacterDetail,
   ChatMessage,
   Conversation,
   LearnerError,
@@ -8,7 +10,15 @@ import type {
   SkillProgress,
   TeacherConfig,
 } from '@english-coach/shared'
-import { DEFAULT_TEACHER_CONFIG, SKILL_CODES, SKILL_NAMES } from '@english-coach/shared'
+import {
+  CHARACTER_NEW_DAYS,
+  DEFAULT_TEACHER_CONFIG,
+  SKILL_CODES,
+  SKILL_NAMES,
+  TEACHER_PERSONAS,
+  characterTagline,
+  configFromPersona,
+} from '@english-coach/shared'
 
 // Todas las consultas están aquí, con parámetros (`?`), nunca texto armado a mano.
 
@@ -204,6 +214,244 @@ export async function upsertTeacherConfig(
     )
     .bind(userId, JSON.stringify(config), Date.now())
     .run()
+}
+
+// ---------------------------------------------------------------- personajes
+
+export interface CharacterRow {
+  id: string
+  user_id: string
+  name: string
+  tagline: string
+  config: string
+  favorite: number
+  sort_order: number
+  created_at: number
+  updated_at: number
+  last_used_at: number | null
+  last_viewed_at: number | null
+}
+
+const CHARACTER_COLUMNS = `id, user_id, name, tagline, config, favorite, sort_order,
+  created_at, updated_at, last_used_at, last_viewed_at`
+
+/** La ficha guardada, siempre completa: lo que falte cae en los valores por defecto. */
+export function parseCharacterConfig(row: CharacterRow): TeacherConfig {
+  try {
+    return { ...DEFAULT_TEACHER_CONFIG, ...(JSON.parse(row.config) as Partial<TeacherConfig>) }
+  } catch {
+    return { ...DEFAULT_TEACHER_CONFIG }
+  }
+}
+
+function isNewCharacter(row: CharacterRow, now = Date.now()): boolean {
+  if (now - row.created_at > CHARACTER_NEW_DAYS * 86_400_000) return false
+  // Si ya lo abriste después de crearlo, la novedad está vista.
+  return row.last_viewed_at === null || row.last_viewed_at < row.created_at
+}
+
+function toCard(row: CharacterRow, messageCount: number): CharacterCard {
+  return {
+    id: row.id,
+    name: row.name,
+    tagline: row.tagline,
+    avatar: parseCharacterConfig(row).avatar,
+    favorite: row.favorite === 1,
+    messageCount,
+    lastUsedAt: row.last_used_at,
+    createdAt: row.created_at,
+    isNew: isNewCharacter(row),
+  }
+}
+
+/**
+ * La biblioteca del usuario, con el contador de mensajes de cada uno.
+ * "Mensajes" son los que escribiste tú, no las respuestas del personaje.
+ */
+export async function listCharacterCards(db: D1Database, userId: string): Promise<CharacterCard[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT c.id, c.user_id, c.name, c.tagline, c.config, c.favorite, c.sort_order,
+              c.created_at, c.updated_at, c.last_used_at, c.last_viewed_at,
+              COUNT(m.id) AS message_count
+       FROM characters c
+       LEFT JOIN conversations v ON v.character_id = c.id
+       LEFT JOIN messages m ON m.conversation_id = v.id AND m.role = 'user'
+       WHERE c.user_id = ?1
+       GROUP BY c.id
+       ORDER BY c.sort_order, c.created_at`,
+    )
+    .bind(userId)
+    .all<CharacterRow & { message_count: number }>()
+
+  return results.map((row) => toCard(row, row.message_count))
+}
+
+export async function countCharacters(db: D1Database, userId: string): Promise<number> {
+  const row = await db
+    .prepare('SELECT COUNT(*) AS total FROM characters WHERE user_id = ?')
+    .bind(userId)
+    .first<{ total: number }>()
+  return row?.total ?? 0
+}
+
+export async function getCharacter(
+  db: D1Database,
+  userId: string,
+  characterId: string,
+): Promise<CharacterRow | null> {
+  return db
+    .prepare(`SELECT ${CHARACTER_COLUMNS} FROM characters WHERE id = ? AND user_id = ?`)
+    .bind(characterId, userId)
+    .first<CharacterRow>()
+}
+
+/** Cuántos mensajes tuyos llevan este personaje y sus charlas. */
+export async function countCharacterMessages(
+  db: D1Database,
+  userId: string,
+  characterId: string,
+): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(m.id) AS total
+       FROM conversations v
+       JOIN messages m ON m.conversation_id = v.id AND m.role = 'user'
+       WHERE v.user_id = ? AND v.character_id = ?`,
+    )
+    .bind(userId, characterId)
+    .first<{ total: number }>()
+  return row?.total ?? 0
+}
+
+export function toCharacterDetail(row: CharacterRow, messageCount: number): CharacterDetail {
+  return { ...toCard(row, messageCount), config: parseCharacterConfig(row) }
+}
+
+export async function insertCharacter(
+  db: D1Database,
+  userId: string,
+  input: { config: TeacherConfig },
+): Promise<CharacterRow> {
+  const now = Date.now()
+  const id = crypto.randomUUID()
+  const next = await db
+    .prepare('SELECT COALESCE(MAX(sort_order), -1) + 1 AS value FROM characters WHERE user_id = ?')
+    .bind(userId)
+    .first<{ value: number }>()
+
+  const row: CharacterRow = {
+    id,
+    user_id: userId,
+    name: input.config.name,
+    tagline: characterTagline(input.config),
+    config: JSON.stringify(input.config),
+    favorite: 0,
+    sort_order: next?.value ?? 0,
+    created_at: now,
+    updated_at: now,
+    last_used_at: null,
+    last_viewed_at: null,
+  }
+
+  await db
+    .prepare(
+      `INSERT INTO characters (id, user_id, name, tagline, config, favorite, sort_order, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
+    )
+    .bind(
+      row.id,
+      row.user_id,
+      row.name,
+      row.tagline,
+      row.config,
+      row.favorite,
+      row.sort_order,
+      row.created_at,
+      row.updated_at,
+    )
+    .run()
+
+  return row
+}
+
+export async function updateCharacter(
+  db: D1Database,
+  userId: string,
+  characterId: string,
+  config: TeacherConfig,
+): Promise<void> {
+  // El nombre y la frase se copian a sus columnas: la tarjeta no depende del JSON.
+  await db
+    .prepare(
+      `UPDATE characters SET name = ?, tagline = ?, config = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`,
+    )
+    .bind(config.name, characterTagline(config), JSON.stringify(config), Date.now(), characterId, userId)
+    .run()
+}
+
+export async function setCharacterFavorite(
+  db: D1Database,
+  userId: string,
+  characterId: string,
+  favorite: boolean,
+): Promise<void> {
+  await db
+    .prepare('UPDATE characters SET favorite = ?, updated_at = ? WHERE id = ? AND user_id = ?')
+    .bind(favorite ? 1 : 0, Date.now(), characterId, userId)
+    .run()
+}
+
+export async function markCharacterViewed(
+  db: D1Database,
+  userId: string,
+  characterId: string,
+): Promise<void> {
+  await db
+    .prepare('UPDATE characters SET last_viewed_at = ? WHERE id = ? AND user_id = ?')
+    .bind(Date.now(), characterId, userId)
+    .run()
+}
+
+export async function markCharacterUsed(
+  db: D1Database,
+  userId: string,
+  characterId: string,
+): Promise<void> {
+  await db
+    .prepare('UPDATE characters SET last_used_at = ? WHERE id = ? AND user_id = ?')
+    .bind(Date.now(), userId ? characterId : characterId, userId)
+    .run()
+}
+
+/**
+ * Estrena la biblioteca la primera vez: si ya tenías una ficha de profe guardada
+ * se convierte en tu primer personaje; si no, se estrenan los cuatro arquetipos
+ * originales de la app. Nunca se inventa nada con dueño.
+ */
+export async function ensureCharacters(db: D1Database, userId: string): Promise<void> {
+  if ((await countCharacters(db, userId)) > 0) return
+
+  const saved = await db
+    .prepare('SELECT config FROM teacher_profiles WHERE user_id = ?')
+    .bind(userId)
+    .first<{ config: string }>()
+
+  if (saved) {
+    let config = { ...DEFAULT_TEACHER_CONFIG }
+    try {
+      config = { ...DEFAULT_TEACHER_CONFIG, ...(JSON.parse(saved.config) as Partial<TeacherConfig>) }
+    } catch {
+      config = { ...DEFAULT_TEACHER_CONFIG }
+    }
+    await insertCharacter(db, userId, { config })
+    return
+  }
+
+  for (const persona of TEACHER_PERSONAS.slice(0, 4)) {
+    await insertCharacter(db, userId, { config: configFromPersona(persona) })
+  }
 }
 
 // ---------------------------------------------------------------- habilidades
