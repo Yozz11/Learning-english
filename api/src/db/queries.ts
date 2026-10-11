@@ -427,7 +427,7 @@ export async function markCharacterUsed(
 
 /**
  * Estrena la biblioteca la primera vez: si ya tenías una ficha de profe guardada
- * se convierte en tu primer personaje; si no, se estrenan los cuatro arquetipos
+ * se convierte en tu primer personaje; si no, se estrenan los seis arquetipos
  * originales de la app. Nunca se inventa nada con dueño.
  */
 export async function ensureCharacters(db: D1Database, userId: string): Promise<void> {
@@ -449,7 +449,7 @@ export async function ensureCharacters(db: D1Database, userId: string): Promise<
     return
   }
 
-  for (const persona of TEACHER_PERSONAS.slice(0, 4)) {
+  for (const persona of TEACHER_PERSONAS) {
     await insertCharacter(db, userId, { config: configFromPersona(persona) })
   }
 }

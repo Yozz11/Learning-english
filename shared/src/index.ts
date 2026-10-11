@@ -69,6 +69,13 @@ export type SessionInfo = {
 export const SPANISH_USAGE_OPTIONS = ['never', 'when_needed', 'often'] as const
 export type SpanishUsage = (typeof SPANISH_USAGE_OPTIONS)[number]
 
+/** Cómo se llama cada opción de uso del español, en las pantallas. */
+export const SPANISH_USAGE_LABELS: Record<SpanishUsage, string> = {
+  never: 'Casi nunca',
+  when_needed: 'Cuando hace falta',
+  often: 'A menudo',
+}
+
 /** Los dibujos que trae la app. Viven en web/public/avatars/<id>.svg. */
 export const AVATAR_PRESET_IDS = ['coach', 'brit', 'friend', 'mentor', 'gamer', 'detective'] as const
 export type AvatarPresetId = (typeof AVATAR_PRESET_IDS)[number]

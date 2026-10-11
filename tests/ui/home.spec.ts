@@ -10,6 +10,10 @@ test.describe('inicio y personajes', () => {
     await page.setViewportSize(MOBILE)
     await page.goto('/')
     await expect(page.locator('.card').first()).toBeVisible()
+    expect(
+      await page.locator('.card').count(),
+      'la biblioteca arranca con los seis arquetipos inventados',
+    ).toBeGreaterThanOrEqual(6)
 
     const searchReference = await referenceBox(context, '.phone .search')
     const search = await box(page, '.search')

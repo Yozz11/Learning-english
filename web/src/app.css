@@ -553,6 +553,45 @@ svg.i {
   color: var(--text-2);
 }
 
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.ficha-actions {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+
+.ficha-actions .btn {
+  text-align: center;
+}
+
+.kv {
+  margin-top: 18px;
+}
+
+.kv-k {
+  font-size: 12px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kv-v {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.ficha-pre {
+  white-space: pre-line;
+}
+
 @media (min-width: 1024px) {
   .topbar {
     display: none;

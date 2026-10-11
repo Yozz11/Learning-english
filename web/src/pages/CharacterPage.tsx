@@ -1,15 +1,34 @@
-import type { CharacterDetail } from '@english-coach/shared'
-import { avatarSrc } from '@english-coach/shared'
-import { useCallback, useEffect, useState } from 'react'
+import type { CharacterDetail, TeacherConfig } from '@english-coach/shared'
+import { SPANISH_USAGE_LABELS, avatarSrc } from '@english-coach/shared'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Icon } from '../components/icons'
 import { Alert, Button, LoadingBox } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
 
 /*
- * Ficha del personaje. Por ahora enseña quién es y deja seguirlo; el chat con
- * cada personaje llega en el paso siguiente de la remodelación.
+ * Ficha del personaje: quién es, cómo habla y cómo corrige. Todo lo que se ve
+ * aquí es lo que el personaje usa de verdad en la charla. Editar la ficha desde
+ * aquí llega en el paso siguiente de la remodelación.
  */
+const SECTIONS: { label: string; value: keyof TeacherConfig; pre?: boolean }[] = [
+  { label: 'Cómo es', value: 'personality' },
+  { label: 'Cómo habla', value: 'speechStyle' },
+  { label: 'Cómo abre la charla', value: 'greeting' },
+  { label: 'Diálogos de ejemplo', value: 'examples', pre: true },
+  { label: 'Lo que nunca hace', value: 'neverDoes' },
+  { label: 'Escenarios', value: 'scenarios' },
+]
+
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="kv">
+      <div className="kv-k">{label}</div>
+      <div className="kv-v">{children}</div>
+    </div>
+  )
+}
+
 export function CharacterPage() {
   const { characterId = '' } = useParams()
   const [character, setCharacter] = useState<CharacterDetail | null>(null)
@@ -47,7 +66,11 @@ export function CharacterPage() {
   if (error) return <Alert>{error}</Alert>
   if (!character) return <LoadingBox />
 
+  const { config } = character
   const src = avatarSrc(character.avatar)
+  const maxCorrections = config.maxCorrections ?? 1
+  const correctionsLabel =
+    maxCorrections === 1 ? '1 error por mensaje' : `${maxCorrections} errores por mensaje`
 
   return (
     <div className="ficha">
@@ -62,16 +85,35 @@ export function CharacterPage() {
 
       <h1 className="ficha-name">{character.name}</h1>
       <p className="ficha-tagline">{character.tagline}</p>
-      <p className="tiny">{character.messageCount} mensajes tuyos</p>
 
-      <div className="row" style={{ marginTop: 16 }}>
-        <Link to={`/chat/${character.id}`}>
-          <Button variant="primary">Chatear</Button>
+      <div className="chips">
+        <span className="chip">Corrige {correctionsLabel}</span>
+        <span className="chip">Español: {SPANISH_USAGE_LABELS[config.spanishUsage]}</span>
+        <span className="chip">{character.messageCount} mensajes tuyos</span>
+      </div>
+
+      <div className="ficha-actions">
+        <Link className="btn btn-primary btn-lg btn-block" to={`/chat/${character.id}`}>
+          Chatear
         </Link>
-        <Button className="btn-small" onClick={toggleFavorite}>
+        <Button
+          className="btn-block"
+          aria-pressed={character.favorite}
+          onClick={toggleFavorite}
+        >
           {character.favorite ? 'Siguiendo' : 'Seguir'}
         </Button>
       </div>
+
+      {SECTIONS.map((section) => {
+        const value = character.config[section.value]
+        if (typeof value !== 'string' || value.trim() === '') return null
+        return (
+          <Row key={section.label} label={section.label}>
+            <p className={section.pre ? 'ficha-pre' : undefined}>{value}</p>
+          </Row>
+        )
+      })}
     </div>
   )
 }
