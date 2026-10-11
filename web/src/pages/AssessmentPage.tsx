@@ -6,7 +6,7 @@ import type {
 } from '@english-coach/shared'
 import { SKILL_NAMES } from '@english-coach/shared'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Alert, Button, Card, LoadingBox, Note, ProgressBar, SkillMeter } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
 
@@ -16,6 +16,7 @@ type Phase =
   | { kind: 'done'; result: AssessmentResult }
 
 export function AssessmentPage() {
+  const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +58,7 @@ export function AssessmentPage() {
 
       if (response.done) {
         setPhase({ kind: 'done', result: response.result })
+        navigate('/test', { replace: true })
       } else {
         setPhase({
           kind: 'question',
@@ -250,7 +252,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
         <Link to="/">
           <Button variant="primary">Ir al inicio</Button>
         </Link>
-        <Link to="/chat">
+        <Link to="/test">
           <Button>Hablar con el profe</Button>
         </Link>
       </div>
