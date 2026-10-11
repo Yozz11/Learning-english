@@ -721,7 +721,7 @@ svg.i {
 }
 
 .msg-bot em {
-  color: #c9c9c9;
+  color: var(--text-dim);
 }
 
 .msg-bot.muted {
@@ -932,17 +932,18 @@ svg.i {
   }
 }
 
-/* ---------------------------------------------------------------- crear */
-/* El editor de la ficha del personaje. Ojo: el plano no trae esta pantalla, así
-   que sigue su tono y sus tokens, pero no copia medidas de ningún marco. */
+/* ---------------------------------------------------------------- pantallas */
+/* El marco común de las pantallas de contenido (crear, perfil, test): una sola
+   columna centrada y con aire entre tarjetas. El plano no trae estas pantallas,
+   así que siguen su tono y sus tokens, sin copiar medidas de ningún marco. */
 
-.editor {
+.pantalla {
   max-width: 560px;
   margin: 0 auto;
   padding: 12px 16px 24px;
   display: grid;
-  /* Sin el minmax(0, …), la fila de arquetipos (que se desliza a lo ancho)
-     estira la columna y la página entera desborda. */
+  /* Sin el minmax(0, …), cualquier fila que se deslice a lo ancho (los
+     arquetipos de "Crear") estira la columna y la página entera desborda. */
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
@@ -976,19 +977,9 @@ svg.i {
   font-size: 26px;
 }
 
-/* ---------------------------------------------------------------- heredado */
-/* Clases de las pantallas que todavía no pasé al diseño nuevo (perfil y test).
-   Los nombres viejos se quedan como alias para no tocar todo de golpe;
-   desaparecen cuando termine la migración. */
-
-:root {
-  --muted: var(--text-2);
-  --accent: var(--text);
-  --accent-2: var(--text-2);
-  --radius: var(--r-box);
-  --radius-sm: var(--r-chip);
-  --shadow: 0 18px 40px rgb(0 0 0 / 45%);
-}
+/* ---------------------------------------------------------------- comunes */
+/* Primitivas compartidas (tarjetas, botones, avisos, campos...). Ya usan los
+   tokens del diseño nuevo; las pantallas migradas las comparten entre sí. */
 
 .box {
   background: var(--surface);
@@ -1125,14 +1116,14 @@ svg.i {
 
 .bar {
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-2);
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--primary-bg);
   transition: width 0.3s;
 }
@@ -1144,14 +1135,14 @@ svg.i {
 
 .skill-track {
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-2);
   overflow: hidden;
 }
 
 .skill-fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--primary-bg);
 }
 
@@ -1246,9 +1237,10 @@ input[type="range"] {
 .alert {
   padding: 11px 13px;
   border-radius: var(--r-chip);
-  border: 1px solid rgba(255, 122, 144, 0.4);
-  background: rgba(255, 122, 144, 0.12);
-  color: #ffd7de;
+  /* El mismo rosa de aviso, pero salido del token (--bad) y no a mano. */
+  border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent);
+  background: color-mix(in srgb, var(--bad) 12%, transparent);
+  color: color-mix(in srgb, var(--bad) 30%, white);
   font-size: 0.88rem;
 }
 
@@ -1387,19 +1379,8 @@ input[type="range"] {
   min-height: 0;
 }
 
-.teach-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  width: 100%;
-}
-
 .teach-row .bubble {
   max-width: calc(100% - 40px);
-}
-
-.bubble-tools {
-  margin-top: 8px;
 }
 
 .link-btn {
@@ -1417,7 +1398,3 @@ input[type="range"] {
   text-underline-offset: 2px;
 }
 
-.stack-tight {
-  display: grid;
-  gap: 8px;
-}

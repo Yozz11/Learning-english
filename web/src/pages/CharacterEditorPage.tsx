@@ -196,7 +196,7 @@ export function CharacterEditorPage() {
   const preview = avatarSrc(config.avatar)
 
   return (
-    <div className="editor">
+    <div className="pantalla">
       <div className="editor-head">
         <Link className="link-btn back-link" to={characterId ? `/personaje/${characterId}` : '/'}>
           <Icon name="back" size={18} />
@@ -258,7 +258,7 @@ export function CharacterEditorPage() {
         <div className="box-head">
           <h2>La ficha</h2>
         </div>
-        <div className="stack" style={{ paddingTop: 0 }}>
+        <div className="stack">
           <div>
             <span className="field-hint">Su cara</span>
             <div className="avatar-grid">
@@ -496,7 +496,7 @@ export function CharacterEditorPage() {
           <h2>Su voz</h2>
         </div>
         {isSpeechSupported() ? (
-          <div className="stack" style={{ paddingTop: 0 }}>
+          <div className="stack">
             <label>
               Voz del dispositivo
               <select

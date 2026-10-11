@@ -9,6 +9,9 @@
   --border: #3a3a3a;
   --text: #f2f2f2;
   --text-2: #9a9a9a;
+  /* El gris claro que el plano usa para las acciones del personaje en cursiva
+     (`*abre una ceja*`): está entre --text y --text-2. */
+  --text-dim: #c9c9c9;
   --primary-bg: #f2f2f2;
   --primary-text: #121212;
   --dot-red: #ff3b30;

@@ -66,7 +66,7 @@ export function ProfilePage() {
   if (!profile) return <LoadingBox />
 
   return (
-    <>
+    <div className="pantalla">
       <Card>
         <div className="box-head">
           <h2>Mi perfil</h2>
@@ -78,7 +78,7 @@ export function ProfilePage() {
       </Card>
 
       <Card>
-        <div className="stack" style={{ paddingTop: 0 }}>
+        <div className="stack">
           <label>
             Cómo te llamas
             <input
@@ -133,6 +133,6 @@ export function ProfilePage() {
       </Card>
 
       {error ? <Alert>{error}</Alert> : null}
-    </>
+    </div>
   )
 }

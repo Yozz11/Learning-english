@@ -75,7 +75,7 @@ export function AssessmentPage() {
 
   if (phase.kind === 'intro') {
     return (
-      <>
+      <div className="pantalla">
         <Card>
           <h2>Test de nivel</h2>
           <h1 style={{ marginTop: 8 }}>¿Dónde estás parado?</h1>
@@ -93,7 +93,7 @@ export function AssessmentPage() {
         <Note>
           Las preguntas de escritura las evalúa la IA con una rúbrica. Tarda unos segundos más.
         </Note>
-      </>
+      </div>
     )
   }
 
@@ -104,7 +104,7 @@ export function AssessmentPage() {
   const { question, answered, total } = phase
 
   return (
-    <>
+    <div className="pantalla">
       <Card>
         <div className="box-head">
           <h2>{SKILL_NAMES[question.skill]}</h2>
@@ -129,7 +129,7 @@ export function AssessmentPage() {
         <h3 style={{ marginBottom: 14 }}>{question.prompt}</h3>
 
         {question.options ? (
-          <div className="stack" style={{ paddingTop: 0 }}>
+          <div className="stack">
             {question.options.map((option, index) => (
               <button
                 key={option}
@@ -147,7 +147,7 @@ export function AssessmentPage() {
             ))}
           </div>
         ) : (
-          <div className="stack" style={{ paddingTop: 0 }}>
+          <div className="stack">
             <textarea
               value={writing}
               onChange={(event) => setWriting(event.target.value)}
@@ -176,13 +176,13 @@ export function AssessmentPage() {
       ) : null}
 
       {error ? <Alert>{error}</Alert> : null}
-    </>
+    </div>
   )
 }
 
 function ResultView({ result }: { result: AssessmentResult }) {
   return (
-    <>
+    <div className="pantalla">
       <Card>
         <h2>Resultado</h2>
         <h1 style={{ marginTop: 8 }}>Listo, ya sé dónde estás</h1>
@@ -195,7 +195,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
         <div className="box-head">
           <h2>Por habilidad</h2>
         </div>
-        <div className="stack" style={{ paddingTop: 0 }}>
+        <div className="stack">
           {result.skills.map((skill) => (
             <SkillMeter key={skill.code} skill={skill} />
           ))}
@@ -233,7 +233,7 @@ function ResultView({ result }: { result: AssessmentResult }) {
           <div className="box-head">
             <h2>Errores detectados</h2>
           </div>
-          <div className="stack" style={{ paddingTop: 0 }}>
+          <div className="stack">
             {result.errors.map((mistake) => (
               <div key={mistake.id} className="correction">
                 <b>{mistake.correction}</b>
@@ -258,6 +258,6 @@ function ResultView({ result }: { result: AssessmentResult }) {
       <p className="tiny" style={{ textAlign: 'center' }}>
         Listening, speaking y pronunciación se miden en la etapa 2.
       </p>
-    </>
+    </div>
   )
 }
