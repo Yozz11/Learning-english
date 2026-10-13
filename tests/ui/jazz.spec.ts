@@ -39,4 +39,39 @@ test.describe('música de fondo', () => {
     await expect(page).toHaveURL(/\/chat$/)
     await expect(page.locator('.jazz-btn')).toBeVisible()
   })
+
+  test('la música arranca sola en el primer toque, si no la apagaste', async ({ page }) => {
+    await login(page)
+    await page.goto('/')
+
+    const button = page.locator('.jazz-btn')
+    await expect(button, 'recién entrado, todavía está apagada').toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+
+    // Los navegadores no dejan sonar antes de un gesto: basta con tocar la pantalla.
+    await page.locator('.search input').click()
+    await expect(button, 'con el primer toque ya suena').toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('si la apagaste, en la próxima visita no arranca sola', async ({ page }) => {
+    await login(page)
+    await page.goto('/')
+
+    const button = page.locator('.jazz-btn')
+    await page.locator('.search input').click()
+    await expect(button).toHaveAttribute('aria-pressed', 'true')
+
+    // La apago a mano: esa decisión se recuerda.
+    await button.click()
+    await expect(button).toHaveAttribute('aria-pressed', 'false')
+
+    await page.goto('/')
+    await page.locator('.search input').click()
+    await expect(button, 'apagada a mano, ya no vuelve sola').toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
 })

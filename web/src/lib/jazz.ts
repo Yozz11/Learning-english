@@ -11,11 +11,33 @@
 const AUDIO_SRC = '/audio/jazz-fondo.mp3'
 
 /** Volumen bajito, tipo ascensor. */
-const JAZZ_VOLUME = 0.14
+const JAZZ_VOLUME = 0.2
+
+/** Si el usuario apagó la música a mano, se respeta en las próximas visitas. */
+const OFF_KEY = 'english-coach:jazz-off'
 
 let audio: HTMLAudioElement | null = null
 let on = false
 const listeners = new Set<(on: boolean) => void>()
+
+/** ¿Se puede encender la música? Solo si el usuario no la apagó antes. */
+function wanted(): boolean {
+  try {
+    return localStorage.getItem(OFF_KEY) !== '1'
+  } catch {
+    // Sin localStorage (algunos modos privados): se enciende igual, solo no se recuerda.
+    return true
+  }
+}
+
+function remember(off: boolean) {
+  try {
+    if (off) localStorage.setItem(OFF_KEY, '1')
+    else localStorage.removeItem(OFF_KEY)
+  } catch {
+    // Igual que arriba: es solo una preferencia, no pasa nada si no se puede guardar.
+  }
+}
 
 function getAudio(): HTMLAudioElement {
   if (!audio) {
@@ -44,9 +66,11 @@ export function toggleJazz(): boolean {
   if (on) {
     el.pause()
     on = false
+    remember(true)
   } else {
     el.volume = JAZZ_VOLUME
     on = true
+    remember(false)
     // Si el navegador bloquea el play, apagamos el estado para no mentirle al botón.
     void el.play().catch(() => {
       on = false
@@ -55,6 +79,33 @@ export function toggleJazz(): boolean {
   }
   emit()
   return on
+}
+
+/**
+ * Enciende la música sola en el primer toque dentro de la app. Los navegadores
+ * no dejan sonar nada antes de un gesto del usuario, y el botón queda lejos:
+ * así la música de fondo aparece sin tener que buscarla (si no la apagó antes).
+ *
+ * Devuelve la función para dejar de escuchar (al desmontar la pantalla).
+ */
+export function autoStartJazz(): () => void {
+  const start = (event: Event) => {
+    disarm()
+    // Si el toque fue en el botón, decide el botón: aquí no lo pisamos.
+    const target = event.target as Element | null
+    if (target?.closest?.('.jazz-btn')) return
+    if (wanted() && !on) toggleJazz()
+  }
+
+  const disarm = () => {
+    window.removeEventListener('pointerdown', start, true)
+    window.removeEventListener('keydown', start, true)
+  }
+
+  // En captura: llega antes que el resto de la app, así el play cae dentro del gesto.
+  window.addEventListener('pointerdown', start, true)
+  window.addEventListener('keydown', start, true)
+  return disarm
 }
 
 export function onJazzChange(listener: (on: boolean) => void): () => void {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { isJazzOn, onJazzChange, toggleJazz } from '../lib/jazz'
+import { autoStartJazz, isJazzOn, onJazzChange, toggleJazz } from '../lib/jazz'
 import { Icon } from './icons'
 
 /*
@@ -9,7 +9,14 @@ import { Icon } from './icons'
 export function MusicToggle() {
   const [on, setOn] = useState(isJazzOn)
 
-  useEffect(() => onJazzChange(setOn), [])
+  useEffect(() => {
+    const stopListening = onJazzChange(setOn)
+    const stopWaiting = autoStartJazz()
+    return () => {
+      stopListening()
+      stopWaiting()
+    }
+  }, [])
 
   return (
     <button

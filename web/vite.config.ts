@@ -23,7 +23,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,webmanifest,mp3}'],
         // La API nunca se guarda en caché: siempre quiero datos frescos.
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [],

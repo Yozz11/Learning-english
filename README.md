@@ -143,6 +143,12 @@ Antes de tocar la base de producción, sacar copia: `npm run db:export --workspa
 
 ## Música de fondo
 
-La app tiene un jazz suave de fondo (volumen bajito, activable desde el botón flotante de nota
-musical). Música: «Feelin Good» de Kevin MacLeod ([incompetech.com](https://incompetech.com)),
-licencia [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+La app tiene un jazz suave de fondo (volumen bajito, tipo ascensor). Arranca solo en el primer
+toque dentro de la app —los navegadores no dejan sonar nada antes de un gesto del usuario— y se
+apaga con el botón flotante de nota musical; si se apaga a mano, ya no vuelve sola en las próximas
+visitas (se recuerda en el navegador). Música: «Feelin Good» de Kevin MacLeod
+([incompetech.com](https://incompetech.com)), licencia
+[CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Además, octubre va con adornos tranquilos de Halloween (telaraña, murciélagos, calabaza y fantasma)
+en una capa fija por detrás del contenido: no ocupan sitio ni reciben clics.
