@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { HalloweenDecor } from './HalloweenDecor'
 import { Icon, type IconName } from './icons'
 import { MusicToggle } from './MusicToggle'
 
@@ -28,6 +29,8 @@ export function AppShell() {
 
   return (
     <div className="shell">
+      <HalloweenDecor />
+
       <nav className="sidebar" aria-label="Secciones">
         {/* El plano muestra solo la palabra: sin bajada de texto. */}
         <div className="brand">english</div>
