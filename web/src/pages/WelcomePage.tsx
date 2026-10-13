@@ -36,7 +36,7 @@ export function WelcomePage() {
         </div>
       </div>
 
-      <h1>Aprende inglés con tu personaje</h1>
+      <h1>Aprende inglés con tu profesor</h1>
 
       <div className="sheet">
         <Link className="btn btn-primary btn-block btn-lg" to="/login">

@@ -11,7 +11,7 @@ test.describe('bienvenida y entrar', () => {
 
     await expect(page).toHaveURL(/\/bienvenida$/)
     await expect(
-      page.getByRole('heading', { name: 'Aprende inglés con tu personaje' }),
+      page.getByRole('heading', { name: 'Aprende inglés con tu profesor' }),
     ).toBeVisible()
     await expect(page.getByRole('link', { name: 'Entrar' })).toBeVisible()
   })

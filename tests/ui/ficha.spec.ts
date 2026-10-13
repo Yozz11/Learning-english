@@ -12,7 +12,7 @@ test.describe('ficha del personaje', () => {
 
     const name = (await page.locator('.card .name').first().innerText()).trim()
     const tagline = (await page.locator('.card .tag').first().innerText()).trim()
-    await page.locator('.card').first().click()
+    await page.locator('.card-link').first().click()
 
     await expect(page).toHaveURL(/\/personaje\//)
     await expect(page.locator('.ficha-name')).toHaveText(name)
@@ -33,7 +33,12 @@ test.describe('ficha del personaje', () => {
     await expect(page.locator('.chips')).toContainText('Corrige')
     await expect(page.locator('.chips')).toContainText('Español')
 
-    await expect(page.getByRole('link', { name: 'Chatear' })).toHaveAttribute(
+    // Las dos formas de entrar con este profesor: entrenar (práctica) o charlar.
+    await expect(page.getByRole('link', { name: 'Entrenar' })).toHaveAttribute(
+      'href',
+      /\/entrenar\/[0-9a-f-]+$/,
+    )
+    await expect(page.getByRole('link', { name: 'Charlar' })).toHaveAttribute(
       'href',
       /\/chat\/[0-9a-f-]+$/,
     )
@@ -47,7 +52,7 @@ test.describe('ficha del personaje', () => {
     await page.goto('/')
 
     const name = (await page.locator('.card .name').first().innerText()).trim()
-    await page.locator('.card').first().click()
+    await page.locator('.card-link').first().click()
 
     const follow = page.getByRole('button', { name: /^(Seguir|Siguiendo)$/ })
     await expect(follow).toHaveAttribute('aria-pressed', 'false')
@@ -61,7 +66,7 @@ test.describe('ficha del personaje', () => {
 
     // Se deja como estaba para no ensuciar el resto de las pruebas.
     await page.getByRole('tab', { name: 'Para ti' }).click()
-    await page.locator('.card').first().click()
+    await page.locator('.card-link').first().click()
     await follow.click()
     await expect(follow).toHaveAttribute('aria-pressed', 'false')
   })

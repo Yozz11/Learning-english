@@ -96,15 +96,15 @@ test.describe('inicio y personajes', () => {
     const firstName = (await page.locator('.card .name').first().innerText()).trim()
     const total = await page.locator('.card').count()
 
-    await page.getByLabel('Buscar personaje').fill(firstName)
+    await page.getByLabel('Buscar profesor').fill(firstName)
     await expect(page.locator('.card')).toHaveCount(1)
     await expect(page.locator('.card .name')).toHaveText(firstName)
 
-    await page.getByLabel('Buscar personaje').fill('zzzz-no-existe')
+    await page.getByLabel('Buscar profesor').fill('zzzz-no-existe')
     await expect(page.locator('.card')).toHaveCount(0)
     await expect(page.locator('.empty')).toContainText('No encontré')
 
-    await page.getByLabel('Buscar personaje').fill('')
+    await page.getByLabel('Buscar profesor').fill('')
     await expect(page.locator('.card')).toHaveCount(total)
   })
 
@@ -115,11 +115,12 @@ test.describe('inicio y personajes', () => {
     await expect(page.locator('.card').first()).toBeVisible()
 
     const name = (await page.locator('.card .name').first().innerText()).trim()
-    await page.locator('.card').first().click()
+    await page.locator('.card-link').first().click()
 
     await expect(page).toHaveURL(/\/personaje\//)
     await expect(page.locator('.ficha-name')).toHaveText(name)
-    await expect(page.getByRole('link', { name: 'Chatear' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Entrenar' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Charlar' })).toBeVisible()
 
     await page.getByRole('link', { name: 'Volver' }).click()
     await expect(page).toHaveURL(/\/$/)

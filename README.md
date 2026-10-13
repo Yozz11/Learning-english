@@ -21,14 +21,19 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
 - **Voz**: lee sus respuestas en voz alta con las voces que ya trae el dispositivo
   (`speechSynthesis`), una distinta por personaje. Sin descargas y sin costo. La app sugiere una voz
   parecida al personaje, pero la puedes cambiar a mano.
-- **Charla** con el personaje que elijas: cada uno tiene su propia conversación y su ficha manda en el
+- **Charla** con el profesor que elijas: cada uno tiene su propia conversación y su ficha manda en el
   prompt. Habla contigo como una persona real —con opiniones, anécdotas y humor— y el aprendizaje pasa
   por debajo: corrige como máximo 1 o 2 errores por mensaje, solo cuando importan, repitiendo la frase
   bien dentro de su respuesta y dejando una nota aparte, sin parar la charla. Guarda los errores que
   repito para insistir después. El resumen de la conversación se regenera solo cada 6 mensajes. En el
-  escritorio, a la derecha se ve la ficha del personaje con tu nivel y tus errores recientes.
-- **Inicio** con la biblioteca de personajes: buscador, pestañas que filtran y ordenan, y una tarjeta por
-  personaje con su frase y su contador de mensajes. Tocar una tarjeta abre su ficha completa.
+  escritorio, a la derecha se ve la ficha del profesor con tu nivel y tus errores recientes.
+- **Entrenar o charlar**: al elegir un profesor puedes conversar (lo de arriba) o **entrenar**, que es una
+  sesión de práctica con ese mismo profesor: te pone un ejercicio corto a la vez (traducir, completar,
+  responder), espera tu respuesta, te corrige y sigue. Son historiales aparte, así la conversación y la
+  práctica no se mezclan. Las dos salidas están en la ficha y, en el escritorio, al pasar el mouse por
+  la tarjeta.
+- **Inicio** con la biblioteca de profesores: buscador, pestañas que filtran y ordenan, y una tarjeta por
+  profesor con su frase y su contador de mensajes. Tocar una tarjeta abre su ficha completa.
 - **Subir**: mandas un audio, un PDF, una foto o un texto y te devuelve lo que dice escrito, y opcionalmente
   traducido al español, con un par de notas de lo que conviene mirar. El archivo no se guarda en ningún
   sitio: va a la IA y se tira. En la base solo queda el texto, para releerlo sin gastar cuota otra vez.

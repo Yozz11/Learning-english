@@ -48,7 +48,7 @@ test.describe('escritorio', () => {
     await login(page)
     await page.setViewportSize(DESKTOP)
     await page.goto('/')
-    await page.locator('.card').first().click()
+    await page.locator('.card-link').first().click()
 
     await expect(page.locator('.ficha-name')).toBeVisible()
     await expectNoHorizontalScroll(page, DESKTOP.width)
@@ -69,8 +69,8 @@ test.describe('escritorio', () => {
     await login(page)
     await page.setViewportSize(DESKTOP)
     await page.goto('/')
-    await page.locator('.card').first().click()
-    await page.getByRole('link', { name: 'Chatear' }).click()
+    await page.locator('.card-link').first().click()
+    await page.getByRole('link', { name: 'Charlar' }).click()
     await expect(page.locator('.chat-msgs')).toBeVisible()
 
     const panel = await box(page, '.chat-panel')

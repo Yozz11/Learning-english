@@ -8,8 +8,8 @@ import { DESKTOP, MOBILE, box, expectClose, expectNoHorizontalScroll, login, ref
 async function openCharacterChat(page: import('@playwright/test').Page) {
   await page.goto('/')
   const name = (await page.locator('.card .name').first().innerText()).trim()
-  await page.locator('.card').first().click()
-  await page.getByRole('link', { name: 'Chatear' }).click()
+  await page.locator('.card-link').first().click()
+  await page.getByRole('link', { name: 'Charlar' }).click()
   await expect(page.locator('.chat-head')).toBeVisible()
   return name
 }

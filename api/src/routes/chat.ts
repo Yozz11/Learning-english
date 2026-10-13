@@ -1,4 +1,4 @@
-import type { CharacterChat, ChatMessage, SendMessageResponse } from '@english-coach/shared'
+import type { CharacterChat, ChatMessage, SendMessageResponse, TeacherConfig } from '@english-coach/shared'
 import { buildSummarySystem, buildSummaryUser, buildTeacherMessages, buildTeacherSystem, parseTeacherReply } from '../ai/prompts'
 import { guardedProvider } from '../ai/usage'
 import {
@@ -40,18 +40,24 @@ export const listConversationsRoute: RouteHandler = async ({ env, userId }) => {
   return json(await listConversations(env.DB, userId))
 }
 
+/** El modo se pide en la URL: /api/characters/:id/chat?mode=train para entrenar. */
+function chatModeFrom(url: URL): 'chat' | 'train' {
+  return url.searchParams.get('mode') === 'train' ? 'train' : 'chat'
+}
+
 /**
  * Abre la charla de un personaje: la última que tuviste con él, o una nueva
  * con su saludo. Todo en una llamada, que la pantalla no tiene que adivinar.
  */
-export const openCharacterChatRoute: RouteHandler = async ({ env, userId, params }) => {
+export const openCharacterChatRoute: RouteHandler = async ({ env, userId, params, url }) => {
   const character = await requireCharacter(env, userId, params.id as string)
+  const mode = chatModeFrom(url)
   await markCharacterUsed(env.DB, userId, character.id)
 
-  const existing = await getLatestCharacterConversation(env.DB, userId, character.id)
+  const existing = await getLatestCharacterConversation(env.DB, userId, character.id, mode)
   const conversation = existing
     ? toConversation(existing)
-    : await startConversationWithCharacter(env, userId, character)
+    : await startConversationWithCharacter(env, userId, character, mode)
 
   const [messages, messageCount] = await Promise.all([
     listMessages(env.DB, conversation.id, 60),
@@ -67,10 +73,11 @@ export const openCharacterChatRoute: RouteHandler = async ({ env, userId, params
 }
 
 /** "Otra charla": empieza de cero con el mismo personaje, sin borrar la anterior. */
-export const newCharacterChatRoute: RouteHandler = async ({ env, userId, params }) => {
+export const newCharacterChatRoute: RouteHandler = async ({ env, userId, params, url }) => {
   const character = await requireCharacter(env, userId, params.id as string)
+  const mode = chatModeFrom(url)
   await markCharacterUsed(env.DB, userId, character.id)
-  const conversation = await startConversationWithCharacter(env, userId, character)
+  const conversation = await startConversationWithCharacter(env, userId, character, mode)
   const messages = await listMessages(env.DB, conversation.id, 60)
   return json({ data: { conversation, messages: messages.map(toChatMessage) } })
 }
@@ -80,14 +87,11 @@ async function startConversationWithCharacter(
   env: Env,
   userId: string,
   character: CharacterRow,
+  mode: 'chat' | 'train' = 'chat',
 ) {
   const config = parseCharacterConfig(character)
-  const conversation = await createConversation(
-    env.DB,
-    userId,
-    `Charla con ${character.name}`,
-    character.id,
-  )
+  const title = mode === 'train' ? `Entrenamiento con ${character.name}` : `Charla con ${character.name}`
+  const conversation = await createConversation(env.DB, userId, title, character.id, mode)
 
   if (config.greeting) {
     const greeting = await insertMessage(env.DB, {
@@ -101,16 +105,17 @@ async function startConversationWithCharacter(
   return conversation
 }
 
-/** La ficha que manda en esta charla: la del personaje, o la del profe de siempre. */
+/** La ficha y el modo que mandan en esta charla: la del personaje, o el profe de siempre. */
 async function conversationConfig(
   env: Env,
   userId: string,
-  conversation: { character_id: string | null },
-) {
-  if (!conversation.character_id) return getTeacherConfig(env.DB, userId)
+  conversation: { character_id: string | null; mode: string },
+): Promise<{ config: TeacherConfig; mode: 'chat' | 'train' }> {
+  const mode = conversation.mode === 'train' ? 'train' : 'chat'
+  if (!conversation.character_id) return { config: await getTeacherConfig(env.DB, userId), mode }
   const row = await getCharacter(env.DB, userId, conversation.character_id)
   // Si el personaje ya no existe, la charla sigue con el profe por defecto.
-  return row ? parseCharacterConfig(row) : getTeacherConfig(env.DB, userId)
+  return row ? { config: parseCharacterConfig(row), mode } : { config: await getTeacherConfig(env.DB, userId), mode }
 }
 
 export const createConversationRoute: RouteHandler = async ({ req, env, userId }) => {
@@ -174,13 +179,14 @@ export const sendMessageRoute: RouteHandler = async ({ req, env, ctx, userId, pa
   const body = await readJsonBody(req)
   const content = requiredString(body, 'content', { min: 1, max: 2000 })
 
-  const [config, profile, skills, errors, recentRows] = await Promise.all([
+  const [configResult, profile, skills, errors, recentRows] = await Promise.all([
     conversationConfig(env, userId, conversation),
     getProfile(env.DB, userId),
     getUserSkills(env.DB, userId),
     listTopErrors(env.DB, userId, 8),
     listMessages(env.DB, conversationId, RECENT_MESSAGES),
   ])
+  const { config, mode } = configResult
 
   const provider = guardedProvider(env)
   const reply = await provider.chat({
@@ -191,6 +197,7 @@ export const sendMessageRoute: RouteHandler = async ({ req, env, ctx, userId, pa
       skills,
       errors,
       conversationSummary: conversation.summary,
+      mode,
     }),
     messages: buildTeacherMessages(
       conversation.summary,
@@ -202,7 +209,8 @@ export const sendMessageRoute: RouteHandler = async ({ req, env, ctx, userId, pa
         { role: 'user' as const, content },
       ],
     ),
-    temperature: 0.85,
+    // Entrenar es más enfocado: menos inventiva, más ejercicio. Conversar, más natural.
+    temperature: mode === 'train' ? 0.6 : 0.85,
     maxTokens: 220,
   })
 

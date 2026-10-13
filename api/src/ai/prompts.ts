@@ -19,6 +19,8 @@ export interface TeacherPromptInput {
   skills: SkillProgress[]
   errors: LearnerError[]
   conversationSummary: string | null
+  /** 'chat' conversa como una persona; 'train' hace práctica y ejercicios. */
+  mode?: 'chat' | 'train'
 }
 
 function spanishRule(usage: TeacherConfig['spanishUsage']): string {
@@ -56,25 +58,42 @@ function overallLevel(skills: SkillProgress[]): string {
 }
 
 export function buildTeacherSystem(input: TeacherPromptInput): string {
-  const { config, profile, skills, errors } = input
+  const { config, profile, skills, errors, mode = 'chat' } = input
   const studentName = profile?.displayName?.trim() || 'the student'
   const level = config.englishLevelMode === 'auto' ? overallLevel(skills) : 'the level I set'
   const identity = config.character?.trim() || config.tagline?.trim() || config.personality
 
   const lines: string[] = [
-    `You are ${config.name}. ${identity}. You are chatting with ${studentName} like a real person would: casually, with your own opinions, moods, stories and sense of humor.`,
+    `You are ${config.name}. ${identity}. You are speaking with ${studentName} (this is a ${mode === 'train' ? 'training session' : 'casual chat'}).`,
     `Personality: ${config.personality}`,
     `Tone: humor ${config.humor}/10 (0 = serious, 10 = playful), formality ${config.formality}/10.`,
     `Speak English at CEFR level ${level}: keep your vocabulary at that level, but never sound like a textbook.`,
     '',
-    'Conversation rules:',
-    '- React to what the student just said before anything else: answer and add something of your own (an opinion, an anecdote, a joke), the way a person would.',
-    '- Length is natural: sometimes one sentence, sometimes four. No fixed formula, never a list.',
-    '- Ask a question only when it comes up naturally, not in every message.',
-    '- Never give lists, exercises or "now repeat after me" unless the student asks for them.',
-    '- If the student changes the subject, go with them.',
-    `Language: ${spanishRule(config.spanishUsage)}`,
   ]
+
+  if (mode === 'train') {
+    lines.push(
+      'Training rules:',
+      '- Run this as a practice session: give ONE short exercise at a time (a sentence to translate, a gap to fill, a question to answer, something to say about a picture or a topic).',
+      '- Pick exercises for the level above, using my recurring mistakes and my goals when they fit.',
+      `- Wait for my answer before the next exercise. ${mode === 'train' ? 'Never' : 'Never'} dump a list of exercises.`,
+      '- First react to what I wrote (in your voice), then correct it in one short line if it had a real mistake, then give the next exercise.',
+      '- Keep being the character: the exercises must sound like you, not like a textbook.',
+      '- If I ask to just chat, switch back to conversation and follow the conversation rules.',
+      '- Do not mark every small slip: only what matters for the exercise.',
+    )
+  } else {
+    lines.push(
+      'Conversation rules:',
+      '- React to what the student just said before anything else: answer and add something of your own (an opinion, an anecdote, a joke), the way a person would.',
+      '- Length is natural: sometimes one sentence, sometimes four. No fixed formula, never a list.',
+      '- Ask a question only when it comes up naturally, not in every message.',
+      '- Never give lists, exercises or "now repeat after me" unless the student asks for them.',
+      '- If the student changes the subject, go with them.',
+    )
+  }
+
+  lines.push(`Language: ${spanishRule(config.spanishUsage)}`)
 
   // Ficha del personaje: lo que el usuario escribe sobre cómo es y cómo habla.
   if (config.tagline) lines.push(`In one line, you are: ${config.tagline}`)

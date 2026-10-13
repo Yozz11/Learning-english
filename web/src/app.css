@@ -444,6 +444,55 @@ svg.i {
 
 .card {
   display: block;
+  position: relative;
+}
+
+.card-link {
+  display: block;
+}
+
+/* Las dos formas de entrar al profesor: al pasar el mouse (o al enfocar).
+   El fondo no recibe clics: solo los botones, así la tarjeta sigue abriendo
+   la ficha al tocarla en cualquier otro lado. */
+.card-actions {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  aspect-ratio: 1 / 1;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: var(--r-card);
+  background: linear-gradient(to top, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0) 60%);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .card:hover .card-actions,
+  .card:focus-within .card-actions {
+    display: flex;
+  }
+}
+
+.mini-btn {
+  flex: 1;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-chip);
+  background: rgb(255 255 255 / 92%);
+  color: #111;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: auto;
+}
+
+.mini-btn.primary {
+  background: var(--primary-bg);
+  color: var(--primary-text);
 }
 
 .card .img {
@@ -656,6 +705,32 @@ svg.i {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chat-id {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.chat-id .chat-nm {
+  flex: none;
+}
+
+/* "Conversación" o "Entrenando": deja claro en qué modo estás. */
+.chat-mode {
+  font-size: 12px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-mode.train {
+  color: var(--good);
+  font-weight: 600;
 }
 
 .icon-btn {

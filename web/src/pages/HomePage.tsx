@@ -21,10 +21,10 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id']
 
 const EMPTY: Record<TabId, string> = {
-  foryou: 'Todavía no hay personajes en tu biblioteca.',
+  foryou: 'Todavía no hay profesores en tu biblioteca.',
   following: 'Todavía no seguís a ninguno. Abre una ficha y toca la estrella.',
   trending: 'Cuando hables con ellos, aquí aparecen los más usados.',
-  new: 'No hay personajes nuevos por mirar.',
+  new: 'No hay profesores nuevos por mirar.',
 }
 
 /** Qué se ve en cada pestaña: se filtra por el buscador y después se ordena. */
@@ -114,13 +114,13 @@ export function HomePage() {
         <input
           type="search"
           value={query}
-          aria-label="Buscar personaje"
-          placeholder="Buscar personaje"
+          aria-label="Buscar profesor"
+          placeholder="Buscar profesor"
           onChange={(event) => setQuery(event.target.value)}
         />
       </div>
 
-      <div className="tabs" role="tablist" aria-label="Filtros de personajes">
+      <div className="tabs" role="tablist" aria-label="Filtros de profesores">
         {TABS.map((entry) => (
           <button
             key={entry.id}
@@ -140,7 +140,7 @@ export function HomePage() {
 
       {list.length === 0 ? (
         <p className="empty" style={{ margin: '20px 16px' }}>
-          {query.trim() ? 'No encontré ningún personaje con ese nombre.' : EMPTY[tab]}
+          {query.trim() ? 'No encontré ningún profesor con ese nombre.' : EMPTY[tab]}
         </p>
       ) : (
         <div className="grid">

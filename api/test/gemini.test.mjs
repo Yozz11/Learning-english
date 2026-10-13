@@ -273,6 +273,26 @@ describe('proveedor Gemini (con un Gemini de mentira)', () => {
     assert.equal(received.length, 1, 'esperar aquí no arregla nada')
   })
 
+  it('entrenar manda las reglas de práctica y sube el enfoque', async () => {
+    received = []
+    const character = await characterId()
+    const chat = await api(`/api/characters/${character}/chat?mode=train`)
+    assert.equal(chat.data.data.conversation.mode, 'train')
+
+    script = [answer('Ejercicio: traduce "Ayer fui al cine".')]
+    const response = await api(`/api/conversations/${chat.data.data.conversation.id}/messages`, {
+      method: 'POST',
+      body: { content: 'Ready.' },
+    })
+
+    assert.equal(response.status, 200)
+    const system = received[0].body.systemInstruction.parts[0].text
+    assert.match(system, /Training rules/)
+    assert.doesNotMatch(system, /Conversation rules/)
+    // Entrenar es más enfocado que conversar (0.6 contra 0.85).
+    assert.equal(received[0].body.generationConfig.temperature, 0.6)
+  })
+
   it('manda el archivo pegado al mensaje y devuelve el texto que trae', async () => {
     received = []
     script = [

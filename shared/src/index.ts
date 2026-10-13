@@ -425,6 +425,8 @@ export type Conversation = {
   lastMessageAt: number | null
   /** El personaje de la charla. `null` en las charlas viejas, sin personaje. */
   characterId: string | null
+  /** 'chat' es conversar; 'train' es práctica y ejercicios con el profesor. */
+  mode: 'chat' | 'train'
 }
 
 /** Lo que devuelve abrir la charla de un personaje: todo en una sola llamada. */

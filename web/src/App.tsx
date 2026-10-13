@@ -46,6 +46,8 @@ export function App() {
           {/* El chat va por personaje: /chat solo redirige al último que usaste. */}
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:characterId" element={<ChatPage />} />
+          {/* Entrenar: práctica y ejercicios con ese profesor (misma charla, otro modo). */}
+          <Route path="/entrenar/:characterId" element={<ChatPage />} />
           {/* El editor de la ficha del personaje: solo edita, y se entra desde la
               propia ficha con "Editar". Crear personajes ya no se hace desde la app. */}
           <Route path="/editar/:characterId" element={<CharacterEditorPage />} />

@@ -391,6 +391,32 @@ describe('API de english-coach', () => {
       assert.equal(reopened.data.data.conversation.id, fresh.data.data.conversation.id)
     })
 
+    it('entrenar abre una charla aparte de la de conversar', async () => {
+      const chat = await api(`/api/characters/${created.id}/chat`)
+      const train = await api(`/api/characters/${created.id}/chat?mode=train`)
+
+      assert.equal(train.status, 200)
+      assert.equal(train.data.data.conversation.mode, 'train')
+      assert.equal(train.data.data.conversation.title, 'Entrenamiento con Personaje editado')
+      assert.equal(chat.data.data.conversation.mode, 'chat')
+      assert.notEqual(
+        train.data.data.conversation.id,
+        chat.data.data.conversation.id,
+        'entrenar y charlar no comparten historial',
+      )
+
+      // Cada modo reabre su propia charla, no la del otro.
+      const trainAgain = await api(`/api/characters/${created.id}/chat?mode=train`)
+      assert.equal(trainAgain.data.data.conversation.id, train.data.data.conversation.id)
+      const chatAgain = await api(`/api/characters/${created.id}/chat`)
+      assert.equal(chatAgain.data.data.conversation.id, chat.data.data.conversation.id)
+
+      // Y la lista de charlas dice de qué modo es cada una.
+      const list = await api('/api/conversations')
+      const inList = list.data.find((entry) => entry.id === train.data.data.conversation.id)
+      assert.equal(inList.mode, 'train')
+    })
+
     it('no deja abrir la charla de un personaje que no es tuyo', async () => {
       const missing = await api('/api/characters/no-existe/chat')
       assert.equal(missing.status, 404)

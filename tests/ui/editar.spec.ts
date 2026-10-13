@@ -12,11 +12,11 @@ test.describe('editar la ficha de un personaje', () => {
     await page.goto('/')
 
     const name = (await page.locator('.card .name').first().innerText()).trim()
-    await page.locator('.card').first().click()
+    await page.locator('.card-link').first().click()
     await page.getByRole('link', { name: 'Editar' }).click()
 
     await expect(page).toHaveURL(/\/editar\/[0-9a-f-]+$/)
-    await expect(page.locator('.editor-title')).toHaveText('Editar personaje')
+    await expect(page.locator('.editor-title')).toHaveText('Editar profesor')
 
     // La cara del avance es cuadrada, como la de la ficha.
     const face = await box(page, '.editor-face')
@@ -37,7 +37,7 @@ test.describe('editar la ficha de un personaje', () => {
     await login(page)
     await page.setViewportSize(MOBILE)
     await page.goto('/')
-    await page.locator('.card').first().click()
+    await page.locator('.card-link').first().click()
     await page.getByRole('link', { name: 'Editar' }).click()
 
     await page.getByRole('textbox', { name: /^Nombre/ }).fill('')

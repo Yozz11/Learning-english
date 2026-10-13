@@ -10,8 +10,8 @@ test.describe('pulido', () => {
     await login(page)
     await page.setViewportSize(MOBILE)
     await page.goto('/')
-    await page.locator('.card').first().click()
-    await page.getByRole('link', { name: 'Chatear' }).click()
+    await page.locator('.card-link').first().click()
+    await page.getByRole('link', { name: 'Charlar' }).click()
 
     const field = page.locator('.composer-field')
     const input = page.locator('.composer-field input')
@@ -76,7 +76,7 @@ test.describe('pulido', () => {
 
     // El inicio, sin resultados del buscador.
     await page.goto('/')
-    await page.getByLabel('Buscar personaje').fill('zzzz-no-existe')
+    await page.getByLabel('Buscar profesor').fill('zzzz-no-existe')
     await expect(page.locator('.empty')).toContainText('No encontré')
   })
 })

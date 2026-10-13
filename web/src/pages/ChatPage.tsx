@@ -8,7 +8,7 @@ import type {
 } from '@english-coach/shared'
 import { avatarSrc, scoreLabel } from '@english-coach/shared'
 import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { Icon } from '../components/icons'
 import { Alert, LoadingBox } from '../components/ui'
 import { api, errorMessage } from '../lib/api'
@@ -23,6 +23,10 @@ type PanelData = { level: string; errors: string }
 
 export function ChatPage() {
   const { characterId } = useParams()
+  const { pathname } = useLocation()
+  // /chat/:id conversa; /entrenar/:id practica con ejercicios con ese profesor.
+  const mode: 'chat' | 'train' = pathname.startsWith('/entrenar') ? 'train' : 'chat'
+  const modeQuery = mode === 'train' ? '?mode=train' : ''
   const [chat, setChat] = useState<CharacterChat | null>(null)
   const [panel, setPanel] = useState<PanelData | null>(null)
   const [draft, setDraft] = useState('')
@@ -37,7 +41,7 @@ export function ChatPage() {
     setLoading(true)
     setError(null)
     api
-      .get<{ data: CharacterChat }>(`/api/characters/${encodeURIComponent(characterId)}/chat`)
+      .get<{ data: CharacterChat }>(`/api/characters/${encodeURIComponent(characterId)}/chat${modeQuery}`)
       .then((result) => {
         if (active) setChat(result.data)
       })
@@ -50,7 +54,7 @@ export function ChatPage() {
     return () => {
       active = false
     }
-  }, [characterId])
+  }, [characterId, modeQuery])
 
   // El panel del escritorio: tu nivel y los errores que más repites.
   useEffect(() => {
@@ -88,7 +92,7 @@ export function ChatPage() {
     setError(null)
     try {
       const result = await api.post<{ data: { conversation: Conversation; messages: ChatMessage[] } }>(
-        `/api/characters/${encodeURIComponent(characterId)}/chat`,
+        `/api/characters/${encodeURIComponent(characterId)}/chat${modeQuery}`,
       )
       setChat((previous) => (previous ? { ...previous, ...result.data } : previous))
       setDraft('')
@@ -170,7 +174,12 @@ export function ChatPage() {
           <Icon name="back" />
         </Link>
         <Face src={face} name={character.name} className="chat-face" />
-        <h1 className="chat-nm">{character.name}</h1>
+        <div className="chat-id">
+          <h1 className="chat-nm">{character.name}</h1>
+          <p className={conversation.mode === 'train' ? 'chat-mode train' : 'chat-mode'}>
+            {conversation.mode === 'train' ? 'Entrenando · práctica y ejercicios' : 'Conversación'}
+          </p>
+        </div>
         <button
           type="button"
           className="icon-btn"
@@ -268,7 +277,7 @@ export function ChatPage() {
           {error ? <Alert>{error}</Alert> : null}
         </div>
 
-        <aside className="chat-panel" aria-label="Ficha del personaje">
+        <aside className="chat-panel" aria-label="Ficha del profesor">
           <Face src={face} name={character.name} className="panel-face" />
           <h2>{character.name}</h2>
           <p>{character.tagline}</p>

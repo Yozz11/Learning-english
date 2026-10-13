@@ -187,7 +187,7 @@ export function CharacterEditorPage() {
         {saved ? <span className="tiny">guardado</span> : null}
       </div>
 
-      <h1 className="editor-title">Editar personaje</h1>
+      <h1 className="editor-title">Editar profesor</h1>
 
       <Card>
         <div className="editor-preview">
@@ -200,7 +200,7 @@ export function CharacterEditorPage() {
           </div>
         </div>
         <p className="muted">
-          Todo esto es lo que el personaje usa de verdad en la charla: cómo te habla, qué te pregunta y cómo
+          Todo esto es lo que el profesor usa de verdad en la charla: cómo te habla, qué te pregunta y cómo
           te corrige. Nada de esto está escrito en el código.
         </p>
       </Card>
@@ -294,7 +294,7 @@ export function CharacterEditorPage() {
           </label>
 
           <label>
-            Personaje
+            Profesor
             <textarea
               value={config.character ?? ''}
               maxLength={300}
@@ -304,7 +304,7 @@ export function CharacterEditorPage() {
             />
             <span className="field-hint">
               Descríbelo con tus palabras (quién es, cómo habla, qué le interesa). Sale mejor que poner el
-              nombre de un personaje famoso, y es el rol que interpreta en la charla.
+              nombre de un profesor famoso, y es el rol que interpreta en la charla.
             </span>
           </label>
 
@@ -411,7 +411,7 @@ export function CharacterEditorPage() {
               value={config.neverDoes ?? ''}
               maxLength={400}
               rows={2}
-              placeholder="Ej.: no se burla de mis errores, no traduce todo, no se sale del personaje."
+              placeholder="Ej.: no se burla de mis errores, no traduce todo, no se sale del papel."
               onChange={(event) => update('neverDoes', event.target.value || null)}
             />
           </label>
@@ -512,7 +512,7 @@ export function CharacterEditorPage() {
                 Probar
               </Button>
               <Button className="btn-small" variant="ghost" onClick={pickSuggestedVoice}>
-                Buscar una parecida al personaje
+                Buscar una parecida a este profesor
               </Button>
             </div>
             <span className="field-hint">
@@ -538,7 +538,7 @@ export function CharacterEditorPage() {
       </div>
 
       <Note>
-        El personaje corrige 1 o 2 errores por respuesta y apunta los que repites. El personaje cambia cómo te
+        El profesor corrige 1 o 2 errores por respuesta y apunta los que repites. El profesor cambia cómo te
         habla, nunca las reglas de corrección.
       </Note>
     </div>

@@ -99,8 +99,11 @@ export function CharacterPage() {
       </div>
 
       <div className="ficha-actions">
-        <Link className="btn btn-primary btn-lg btn-block" to={`/chat/${character.id}`}>
-          Chatear
+        <Link className="btn btn-primary btn-lg btn-block" to={`/entrenar/${character.id}`}>
+          Entrenar
+        </Link>
+        <Link className="btn btn-lg btn-block" to={`/chat/${character.id}`}>
+          Charlar
         </Link>
         <Button
           className="btn-block"
