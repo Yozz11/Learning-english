@@ -22,10 +22,11 @@ App personal para aprender inglés: test de nivel, perfil por habilidades y un p
   (`speechSynthesis`), una distinta por personaje. Sin descargas y sin costo. La app sugiere una voz
   parecida al personaje, pero la puedes cambiar a mano.
 - **Charla** con el personaje que elijas: cada uno tiene su propia conversación y su ficha manda en el
-  prompt (habla, corrige y cierra preguntando como ese personaje). Corrige como máximo 1 o 2 errores por
-  mensaje, prioriza los que repito y los guarda para insistir después. El resumen de la conversación se
-  regenera solo cada 6 mensajes. En el escritorio, a la derecha se ve la ficha del personaje con tu nivel
-  y tus errores recientes.
+  prompt. Habla contigo como una persona real —con opiniones, anécdotas y humor— y el aprendizaje pasa
+  por debajo: corrige como máximo 1 o 2 errores por mensaje, solo cuando importan, repitiendo la frase
+  bien dentro de su respuesta y dejando una nota aparte, sin parar la charla. Guarda los errores que
+  repito para insistir después. El resumen de la conversación se regenera solo cada 6 mensajes. En el
+  escritorio, a la derecha se ve la ficha del personaje con tu nivel y tus errores recientes.
 - **Inicio** con la biblioteca de personajes: buscador, pestañas que filtran y ordenan, y una tarjeta por
   personaje con su frase y su contador de mensajes. Tocar una tarjeta abre su ficha completa.
 - **Subir**: mandas un audio, un PDF, una foto o un texto y te devuelve lo que dice escrito, y opcionalmente
@@ -130,7 +131,7 @@ npm run build && npm run deploy --workspace api
 ```
 
 Antes de desplegar: cambiar la contraseña (la de desarrollo está en `api/.dev.vars`, que no se sube a
-git) y rotar cualquier API key que se haya pegado en un chat.
+git).
 
 Antes de tocar la base de producción, sacar copia: `npm run db:export --workspace api` (o
 `wrangler d1 export english-coach --remote --output copia.sql`). El archivo queda fuera de git.

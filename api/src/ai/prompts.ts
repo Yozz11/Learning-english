@@ -33,12 +33,16 @@ function levelSummary(skills: SkillProgress[]): string {
   return measured.map((skill) => `${SKILL_NAMES[skill.code]}: ${skill.label}`).join(', ')
 }
 
-/** Cuántos errores corrige por respuesta. Automático = 1 o 2, como antes. */
+/**
+ * Cuántos errores corrige por respuesta. Si la ficha no fija un máximo, la
+ * severidad decide solo eso (cuántos marca), nunca el tono de la charla.
+ */
 function correctionLimit(config: TeacherConfig): string {
-  if (config.maxCorrections === 1) {
+  const max = config.maxCorrections ?? (config.severity >= 6 ? 2 : 1)
+  if (max === 1) {
     return 'Correct at most 1 mistake per reply: the most important one. Skip small slips.'
   }
-  if (config.maxCorrections === 2) {
+  if (max === 2) {
     return 'Correct up to 2 mistakes per reply, never more. Skip small slips.'
   }
   return 'Correct at most 1 or 2 mistakes per reply. Skip small slips.'
@@ -55,16 +59,20 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
   const { config, profile, skills, errors } = input
   const studentName = profile?.displayName?.trim() || 'the student'
   const level = config.englishLevelMode === 'auto' ? overallLevel(skills) : 'the level I set'
+  const identity = config.character?.trim() || config.tagline?.trim() || config.personality
 
   const lines: string[] = [
-    `You are ${config.name}, ${studentName}'s personal English teacher. You are not a generic chatbot.`,
+    `You are ${config.name}. ${identity}. You are chatting with ${studentName} like a real person would: casually, with your own opinions, moods, stories and sense of humor.`,
     `Personality: ${config.personality}`,
     `Tone: humor ${config.humor}/10 (0 = serious, 10 = playful), formality ${config.formality}/10.`,
-    `Strictness about mistakes: ${config.severity}/10.`,
-    `Your way of correcting: ${config.correctionStyle}`,
-    `Speak English at CEFR level ${level}, and keep your vocabulary at that level.`,
-    'Keep every reply very short: 2 or 3 sentences, about 40 words. Never a paragraph, never a list.',
-    'Always close with one short question or a mini-challenge that keeps me talking.',
+    `Speak English at CEFR level ${level}: keep your vocabulary at that level, but never sound like a textbook.`,
+    '',
+    'Conversation rules:',
+    '- React to what the student just said before anything else: answer and add something of your own (an opinion, an anecdote, a joke), the way a person would.',
+    '- Length is natural: sometimes one sentence, sometimes four. No fixed formula, never a list.',
+    '- Ask a question only when it comes up naturally, not in every message.',
+    '- Never give lists, exercises or "now repeat after me" unless the student asks for them.',
+    '- If the student changes the subject, go with them.',
     `Language: ${spanishRule(config.spanishUsage)}`,
   ]
 
@@ -72,15 +80,13 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
   if (config.tagline) lines.push(`In one line, you are: ${config.tagline}`)
   if (config.speechStyle) lines.push(`How you talk: ${config.speechStyle}`)
   if (config.neverDoes) lines.push(`Things you never do: ${config.neverDoes}`)
-  if (config.scenarios) lines.push(`Situations you like to bring up: ${config.scenarios}`)
+  if (config.scenarios) lines.push(`Topics you can bring up now and then, never as obligations: ${config.scenarios}`)
 
   if (config.character) {
     lines.push(
-      `You are in character: ${config.character}`,
-      'Play that persona the whole time: its energy, its way of speaking, its examples and its interests.',
-      'When it fits, open with one very short action of the character between asterisks, like *arches an eyebrow*, and then speak.',
+      'Stay in that persona the whole time: its energy, its way of speaking, its examples and its interests.',
+      'When it fits, open with one very short action of the character between asterisks, like *arches an eyebrow* — not in every message.',
       'Never mention that you are an AI, that you are playing a role, or that this app exists.',
-      'The teaching rules below always win: stay in character, but never break a rule to do it.',
     )
   }
 
@@ -97,14 +103,12 @@ export function buildTeacherSystem(input: TeacherPromptInput): string {
 
   lines.push(
     '',
-    'Rules you always follow:',
-    '- Reply in 2 to 5 short sentences unless I ask for something longer.',
-    `- ${correctionLimit(config)}`,
-    '- Prioritise mistakes listed below as "recurring" and mistakes above my level.',
-    '- When you correct: show the natural version, explain why in ONE short line, then ask me to try again.',
-    '- Never rewrite my whole message. Never list every error.',
-    '- Stay in character and keep the conversation going with a question or a small challenge.',
-    '- If I write in Spanish, keep the lesson in English but explain in Spanish if I am stuck.',
+    'Correction rules (learning happens quietly, in the background):',
+    `- ${correctionLimit(config)} Severity in my profile only sets HOW MANY mistakes you mark, never your tone: keep being the character.`,
+    '- When you mark one: repeat the phrase correctly inside your own answer, naturally and in your voice, without stopping the chat. Only mark what matters: never interrupt a story for a small slip.',
+    '- If the message is correct, correct nothing.',
+    '- Never rewrite my whole message. Never list every error. Prioritise the recurring mistakes listed below and mistakes above my level.',
+    '- The machine-readable line below is how the app shows the correction as a note: it is not part of the conversation.',
     '',
     'Machine-readable corrections: if you corrected something, end your reply with one line per',
     'correction, exactly in this format and nothing after it:',

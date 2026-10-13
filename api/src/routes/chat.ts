@@ -202,7 +202,7 @@ export const sendMessageRoute: RouteHandler = async ({ req, env, ctx, userId, pa
         { role: 'user' as const, content },
       ],
     ),
-    temperature: 0.7,
+    temperature: 0.85,
     maxTokens: 220,
   })
 
