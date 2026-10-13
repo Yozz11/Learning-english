@@ -283,6 +283,38 @@ svg.i {
   background: var(--dot-blue);
 }
 
+/* --- botón de música de fondo (flotante) --- */
+
+.jazz-btn {
+  position: fixed;
+  right: 16px;
+  /* Arriba de la barra inferior del móvil (84 px + relleno + margen). */
+  bottom: calc(126px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.12);
+}
+
+.jazz-btn.on {
+  background: var(--primary-bg);
+  color: var(--primary-text);
+}
+
+@media (min-width: 1024px) {
+  .jazz-btn {
+    right: 20px;
+    bottom: 20px;
+  }
+}
+
 /* --- barra lateral (escritorio) --- */
 
 .sidebar {

@@ -140,3 +140,9 @@ git).
 
 Antes de tocar la base de producción, sacar copia: `npm run db:export --workspace api` (o
 `wrangler d1 export english-coach --remote --output copia.sql`). El archivo queda fuera de git.
+
+## Música de fondo
+
+La app tiene un jazz suave de fondo (volumen bajito, activable desde el botón flotante de nota
+musical). Música: «Feelin Good» de Kevin MacLeod ([incompetech.com](https://incompetech.com)),
+licencia [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).

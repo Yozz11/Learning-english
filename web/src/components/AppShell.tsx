@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Icon, type IconName } from './icons'
+import { MusicToggle } from './MusicToggle'
 
 /*
  * Estructura de la app: barra inferior en el móvil, barra lateral en el
@@ -47,6 +48,8 @@ export function AppShell() {
         <div className={fullScreen ? 'page page-flat' : 'page'}>
           <Outlet />
         </div>
+
+        <MusicToggle />
 
         {fullScreen ? null : (
           <nav className="bottom-nav" aria-label="Secciones">
