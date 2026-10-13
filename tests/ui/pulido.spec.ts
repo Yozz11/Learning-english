@@ -55,6 +55,17 @@ test.describe('pulido', () => {
     expect(correction.background, 'la caja tiene fondo propio').not.toBe('rgba(0, 0, 0, 0)')
   })
 
+  test('la campana de la barra de arriba lleva a Novedades', async ({ page }) => {
+    await login(page)
+    await page.setViewportSize(MOBILE)
+    await page.goto('/')
+
+    // Antes cambiaba de pestaña sin avisar; el punto promete novedades.
+    await page.locator('.topbar').getByRole('link', { name: /^Novedades/ }).click()
+    await expect(page).toHaveURL(/\/novedades$/)
+    await expect(page.locator('.editor-title')).toHaveText('Novedades')
+  })
+
   test('las listas vacías explican qué hacer', async ({ page }) => {
     await login(page)
     await page.setViewportSize(MOBILE)
